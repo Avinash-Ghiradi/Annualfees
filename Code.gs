@@ -1,8 +1,10 @@
 // ==========================================
 // STUDENT QR CODE & DRESS MANAGEMENT SYSTEM
 // Google Apps Script Backend Code (Code.gs)
+// Connected Google Sheet ID: 1uhK7jOTvlKGTC-7FVQxJa3g10I9nnNce2icXcE4ccVQ
 // ==========================================
 
+const SPREADSHEET_ID = "1uhK7jOTvlKGTC-7FVQxJa3g10I9nnNce2icXcE4ccVQ";
 const DATASHEET = "Data";
 const STUDENTSHEET = "Students";
 const CURRENCY_SYMBOL = "₹"; // Indian Rupee
@@ -10,6 +12,53 @@ const QR_CODE_FOLDER_NAME = "QR Codes";
 const DROPDOWN_SHEET = "DROPDOWN";
 const RECEIPT_FOLDER_NAME = "Receipts";
 const WHATSAPP_API_URL = "https://api.whatsapp.com/send";
+
+/**
+ * Gets the active or linked Spreadsheet reliably.
+ */
+function getSpreadsheet() {
+  if (SPREADSHEET_ID && SPREADSHEET_ID.trim() !== "") {
+    try {
+      return SpreadsheetApp.openById(SPREADSHEET_ID.trim());
+    } catch (e) {
+      console.error("Error opening spreadsheet by ID: " + e.toString());
+    }
+  }
+  return SpreadsheetApp.getActiveSpreadsheet();
+}
+
+/**
+ * Gets a sheet by name with case-insensitive and fallback matching.
+ */
+function getSheetByNameCaseInsensitive(ss, sheetName) {
+  if (!ss) return null;
+  const sheet = ss.getSheetByName(sheetName);
+  if (sheet) return sheet;
+
+  const sheets = ss.getSheets();
+  const target = sheetName.trim().toLowerCase();
+  for (let i = 0; i < sheets.length; i++) {
+    if (sheets[i].getName().trim().toLowerCase() === target) {
+      return sheets[i];
+    }
+  }
+  return null;
+}
+
+/**
+ * Maps header row strings to their column index.
+ */
+function getHeaderMap(headerRow) {
+  const map = {};
+  if (!headerRow || !Array.isArray(headerRow)) return map;
+  headerRow.forEach((h, idx) => {
+    if (h !== undefined && h !== null) {
+      const key = h.toString().trim().toLowerCase();
+      map[key] = idx;
+    }
+  });
+  return map;
+}
 
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile('index');
@@ -29,8 +78,8 @@ function include(filename) {
 
 function processDressSale(formObject) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let dataSheet = ss.getSheetByName(DATASHEET);
+    const ss = getSpreadsheet();
+    let dataSheet = getSheetByNameCaseInsensitive(ss, DATASHEET);
     
     // Ensure Data sheet exists
     if (!dataSheet) {
@@ -47,7 +96,6 @@ function processDressSale(formObject) {
     const price = parseFloat(formObject.price) || 0;
     const dressTotal = quantity * price;
     
-    // Check if student exists
     const student = lookupStudent(formObject.studentCode);
     if (!student) {
       return { 
@@ -56,7 +104,6 @@ function processDressSale(formObject) {
       };
     }
     
-    // Check stock availability
     if (quantity > student.remainingDress) {
       return { 
         success: false, 
@@ -64,7 +111,6 @@ function processDressSale(formObject) {
       };
     }
     
-    // Calculate fees if provided
     let selectedFees = {};
     let totalFees = 0;
     
@@ -75,7 +121,6 @@ function processDressSale(formObject) {
         
         if (classFeesResult.success) {
           const fees = classFeesResult.fees;
-          
           feeCategories.forEach(feeName => {
             if (fees[feeName] && fees[feeName] > 0) {
               selectedFees[feeName] = fees[feeName];
@@ -90,7 +135,6 @@ function processDressSale(formObject) {
     
     const grandTotal = dressTotal + totalFees;
     
-    // Validate quantity
     if (quantity <= 0) {
       return { 
         success: false, 
@@ -98,13 +142,11 @@ function processDressSale(formObject) {
       };
     }
     
-    // Get current timestamp
     const timestamp = new Date().toLocaleString('en-IN', { 
       timeZone: 'Asia/Kolkata',
       hour12: false 
     });
     
-    // Append to Data sheet with fees
     const rowData = [
       timestamp,
       formObject.student_name || student.studentName,
@@ -118,7 +160,6 @@ function processDressSale(formObject) {
       dressTotal
     ];
     
-    // Add individual fee columns
     const feeHeaders = [
       'Admission Fees', 'Annual Day Fees', 'Sports Fees', 'Exam Fees', 
       'Library Fees', 'Medical Fees', 'Tour Fees', 'Lab Fees', 
@@ -129,13 +170,11 @@ function processDressSale(formObject) {
       rowData.push(selectedFees[feeHeader] || 0);
     });
     
-    // Add totals
     rowData.push(totalFees);
     rowData.push(grandTotal);
     
     dataSheet.appendRow(rowData);
     
-    // Update student stock
     const updateSuccess = updateStudentStock(formObject.studentCode, quantity);
     
     if (updateSuccess) {
@@ -175,9 +214,10 @@ function processDressSale(formObject) {
 
 function getClasses() {
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DROPDOWN_SHEET);
+    const ss = getSpreadsheet();
+    let sheet = getSheetByNameCaseInsensitive(ss, DROPDOWN_SHEET);
     if (!sheet) {
-      sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet(DROPDOWN_SHEET);
+      sheet = ss.insertSheet(DROPDOWN_SHEET);
       sheet.getRange('A1').setValue('Class');
       sheet.getRange('B1').setValue('Song/Event Name');
       sheet.getRange('C1').setValue('Dress Code');
@@ -189,11 +229,11 @@ function getClasses() {
       return row[0];
     });
     
-    if (classes.length > 0 && classes[0] === 'Class') {
+    if (classes.length > 0 && classes[0].toString().toLowerCase() === 'class') {
       classes.shift();
     }
     
-    return classes;
+    return [...new Set(classes)].filter(Boolean);
   } catch (error) {
     console.error('Error getting classes:', error);
     return [];
@@ -202,7 +242,8 @@ function getClasses() {
 
 function getSongEvents() {
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DROPDOWN_SHEET);
+    const ss = getSpreadsheet();
+    var sheet = getSheetByNameCaseInsensitive(ss, DROPDOWN_SHEET);
     if (!sheet) {
       return [];
     }
@@ -212,11 +253,11 @@ function getSongEvents() {
       return row[0];
     });
     
-    if (songEvents.length > 0 && songEvents[0] === 'Song/Event Name') {
+    if (songEvents.length > 0 && songEvents[0].toString().toLowerCase().includes('song')) {
       songEvents.shift();
     }
     
-    return songEvents;
+    return [...new Set(songEvents)].filter(Boolean);
   } catch (error) {
     console.error('Error getting song events:', error);
     return [];
@@ -225,7 +266,8 @@ function getSongEvents() {
 
 function getDressCodes() {
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DROPDOWN_SHEET);
+    const ss = getSpreadsheet();
+    var sheet = getSheetByNameCaseInsensitive(ss, DROPDOWN_SHEET);
     if (!sheet) {
       return [];
     }
@@ -235,11 +277,11 @@ function getDressCodes() {
       return row[0];
     });
     
-    if (dressCodes.length > 0 && dressCodes[0] === 'Dress Code') {
+    if (dressCodes.length > 0 && dressCodes[0].toString().toLowerCase().includes('dress')) {
       dressCodes.shift();
     }
     
-    return dressCodes;
+    return [...new Set(dressCodes)].filter(Boolean);
   } catch (error) {
     console.error('Error getting dress codes:', error);
     return [];
@@ -248,15 +290,14 @@ function getDressCodes() {
 
 function saveStudent(studentData) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    let studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       studentSheet = ss.insertSheet(STUDENTSHEET);
       studentSheet.appendRow(['Student ID', 'Class', 'Student Name', 'Song/Event Name', 'Price', 'Total Dress', 'Remaining Dress', 'Phone No', 'Dress Code', 'QR URL', 'Registration Date']);
     } else {
       const headers = studentSheet.getRange(1, 1, 1, Math.max(11, studentSheet.getLastColumn())).getValues()[0];
-      
       const requiredColumns = [
         {name: 'Student ID', position: 0},
         {name: 'Class', position: 1},
@@ -272,23 +313,26 @@ function saveStudent(studentData) {
       ];
       
       requiredColumns.forEach(function(column, index) {
-        if (headers[index] !== column.name) {
+        if (!headers[index] || headers[index].toString().trim() === '') {
           studentSheet.getRange(1, index + 1).setValue(column.name);
         }
       });
     }
     
     const data = studentSheet.getDataRange().getValues();
-    
+    const map = getHeaderMap(data[0]);
+    const idIdx = map['student id'] !== undefined ? map['student id'] : 0;
+    const nameIdx = map['student name'] !== undefined ? map['student name'] : 2;
+
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] && data[i][0].toString().toLowerCase() === studentData.studentId.toLowerCase()) {
+      if (data[i][idIdx] && data[i][idIdx].toString().toLowerCase() === studentData.studentId.toLowerCase()) {
         return {
           success: false,
           error: 'Student ID "' + studentData.studentId + '" already exists!'
         };
       }
       
-      if (data[i][2] && data[i][2].toString().toLowerCase() === studentData.studentName.toLowerCase()) {
+      if (data[i][nameIdx] && data[i][nameIdx].toString().toLowerCase() === studentData.studentName.toLowerCase()) {
         return {
           success: false,
           error: 'Student "' + studentData.studentName + '" already exists!'
@@ -414,28 +458,41 @@ function getOrCreateQRFolder() {
 
 function lookupStudent(studentId) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       return null;
     }
     
     const data = studentSheet.getDataRange().getValues();
+    if (data.length < 2) return null;
     
+    const map = getHeaderMap(data[0]);
+    const idIdx = map['student id'] ?? map['student code'] ?? map['id'] ?? 0;
+    const classIdx = map['class'] ?? 1;
+    const nameIdx = map['student name'] ?? map['name'] ?? 2;
+    const eventIdx = map['song/event name'] ?? map['song/event'] ?? map['event'] ?? 3;
+    const priceIdx = map['price'] ?? 4;
+    const totalDressIdx = map['total dress'] ?? map['total stock'] ?? 5;
+    const remDressIdx = map['remaining dress'] ?? map['remaining stock'] ?? map['remaining'] ?? 6;
+    const phoneIdx = map['phone no'] ?? map['phone'] ?? map['mobile'] ?? 7;
+    const dressCodeIdx = map['dress code'] ?? 8;
+    const qrUrlIdx = map['qr url'] ?? map['qr code'] ?? 9;
+
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] && data[i][0].toString() === studentId.toString()) {
+      if (data[i][idIdx] && data[i][idIdx].toString().trim().toLowerCase() === studentId.toString().trim().toLowerCase()) {
         return {
-          studentId: data[i][0],
-          className: data[i][1],
-          studentName: data[i][2],
-          songEvent: data[i][3],
-          price: data[i][4],
-          totalDress: data[i][5] || 0,
-          remainingDress: data[i][6] || 0,
-          phoneNo: data[i][7] || '',
-          dressCode: data[i][8] || '',
-          qrUrl: data[i][9] || ''
+          studentId: data[i][idIdx],
+          className: data[i][classIdx],
+          studentName: data[i][nameIdx],
+          songEvent: data[i][eventIdx],
+          price: data[i][priceIdx],
+          totalDress: data[i][totalDressIdx] || 0,
+          remainingDress: data[i][remDressIdx] !== undefined ? data[i][remDressIdx] : (data[i][totalDressIdx] || 0),
+          phoneNo: data[i][phoneIdx] || '',
+          dressCode: data[i][dressCodeIdx] || '',
+          qrUrl: data[i][qrUrlIdx] || ''
         };
       }
     }
@@ -448,25 +505,28 @@ function lookupStudent(studentId) {
 
 function updateStudentStock(studentId, quantity) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       throw new Error('Students sheet not found');
     }
     
     const data = studentSheet.getDataRange().getValues();
+    const map = getHeaderMap(data[0]);
+    const idIdx = map['student id'] ?? 0;
+    const remDressIdx = map['remaining dress'] ?? 6;
     
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] && data[i][0].toString() === studentId.toString()) {
-        const remainingDress = parseInt(data[i][6]) || 0;
+      if (data[i][idIdx] && data[i][idIdx].toString().trim().toLowerCase() === studentId.toString().trim().toLowerCase()) {
+        const remainingDress = parseInt(data[i][remDressIdx]) || 0;
         const newRemainingDress = remainingDress - parseInt(quantity);
         
         if (newRemainingDress < 0) {
           throw new Error(`Insufficient Dress! Available: ${remainingDress}`);
         }
         
-        studentSheet.getRange(i + 1, 7).setValue(newRemainingDress);
+        studentSheet.getRange(i + 1, remDressIdx + 1).setValue(newRemainingDress);
         return true;
       }
     }
@@ -480,28 +540,43 @@ function updateStudentStock(studentId, quantity) {
 
 function getAllStudents() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       return [];
     }
     
     const data = studentSheet.getDataRange().getValues();
+    if (data.length < 2) return [];
+
+    const map = getHeaderMap(data[0]);
+    const idIdx = map['student id'] ?? map['student code'] ?? map['id'] ?? 0;
+    const classIdx = map['class'] ?? 1;
+    const nameIdx = map['student name'] ?? map['name'] ?? 2;
+    const eventIdx = map['song/event name'] ?? map['song/event'] ?? map['event'] ?? 3;
+    const priceIdx = map['price'] ?? 4;
+    const totalDressIdx = map['total dress'] ?? map['total stock'] ?? 5;
+    const remDressIdx = map['remaining dress'] ?? map['remaining stock'] ?? map['remaining'] ?? 6;
+    const phoneIdx = map['phone no'] ?? map['phone'] ?? map['mobile'] ?? 7;
+    const dressCodeIdx = map['dress code'] ?? 8;
+    const qrUrlIdx = map['qr url'] ?? map['qr code'] ?? 9;
+
     const students = [];
     
     for (let i = 1; i < data.length; i++) {
+      if (!data[i][idIdx] && !data[i][nameIdx]) continue;
       students.push({
-        id: data[i][0] || '',
-        class: data[i][1] || '',
-        name: data[i][2] || '',
-        songEvent: data[i][3] || '',
-        price: data[i][4] || 0,
-        totalDress: data[i][5] || 0,
-        remainingDress: data[i][6] || 0,
-        phoneNo: data[i][7] || '',
-        dressCode: data[i][8] || '',
-        qrUrl: data[i][9] || ''
+        id: data[i][idIdx] || '',
+        class: data[i][classIdx] || '',
+        name: data[i][nameIdx] || '',
+        songEvent: data[i][eventIdx] || '',
+        price: data[i][priceIdx] || 0,
+        totalDress: data[i][totalDressIdx] || 0,
+        remainingDress: data[i][remDressIdx] !== undefined ? data[i][remDressIdx] : (data[i][totalDressIdx] || 0),
+        phoneNo: data[i][phoneIdx] || '',
+        dressCode: data[i][dressCodeIdx] || '',
+        qrUrl: data[i][qrUrlIdx] || ''
       });
     }
     
@@ -514,31 +589,42 @@ function getAllStudents() {
 
 function updateStudent(studentData) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       return { success: false, error: 'Students sheet not found' };
     }
     
     const data = studentSheet.getDataRange().getValues();
-    
+    const map = getHeaderMap(data[0]);
+    const idIdx = map['student id'] ?? 0;
+    const classIdx = map['class'] ?? 1;
+    const nameIdx = map['student name'] ?? 2;
+    const eventIdx = map['song/event name'] ?? 3;
+    const priceIdx = map['price'] ?? 4;
+    const totalDressIdx = map['total dress'] ?? 5;
+    const remDressIdx = map['remaining dress'] ?? 6;
+    const phoneIdx = map['phone no'] ?? 7;
+    const dressCodeIdx = map['dress code'] ?? 8;
+    const qrUrlIdx = map['qr url'] ?? 9;
+
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] && data[i][0].toString() === studentData.id.toString()) {
-        studentSheet.getRange(i + 1, 2).setValue(studentData.class);
-        studentSheet.getRange(i + 1, 3).setValue(studentData.name);
-        studentSheet.getRange(i + 1, 4).setValue(studentData.songEvent);
-        studentSheet.getRange(i + 1, 5).setValue(studentData.price);
-        studentSheet.getRange(i + 1, 6).setValue(studentData.totalDress);
-        studentSheet.getRange(i + 1, 7).setValue(studentData.remainingDress);
-        studentSheet.getRange(i + 1, 8).setValue(studentData.phoneNo || '');
-        studentSheet.getRange(i + 1, 9).setValue(studentData.dressCode || '');
+      if (data[i][idIdx] && data[i][idIdx].toString().trim().toLowerCase() === studentData.id.toString().trim().toLowerCase()) {
+        studentSheet.getRange(i + 1, classIdx + 1).setValue(studentData.class);
+        studentSheet.getRange(i + 1, nameIdx + 1).setValue(studentData.name);
+        studentSheet.getRange(i + 1, eventIdx + 1).setValue(studentData.songEvent);
+        studentSheet.getRange(i + 1, priceIdx + 1).setValue(studentData.price);
+        studentSheet.getRange(i + 1, totalDressIdx + 1).setValue(studentData.totalDress);
+        studentSheet.getRange(i + 1, remDressIdx + 1).setValue(studentData.remainingDress);
+        studentSheet.getRange(i + 1, phoneIdx + 1).setValue(studentData.phoneNo || '');
+        studentSheet.getRange(i + 1, dressCodeIdx + 1).setValue(studentData.dressCode || '');
         
-        if (studentData.name !== data[i][2]) {
+        if (studentData.name !== data[i][nameIdx]) {
           try {
             const qrUrl = generateQRCode(studentData.id, studentData.name);
             if (qrUrl) {
-              studentSheet.getRange(i + 1, 10).setValue(qrUrl);
+              studentSheet.getRange(i + 1, qrUrlIdx + 1).setValue(qrUrl);
             }
           } catch (error) {
             console.error('Error updating QR code:', error);
@@ -558,17 +644,19 @@ function updateStudent(studentData) {
 
 function deleteStudent(studentId) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       return { success: false, error: 'Students sheet not found' };
     }
     
     const data = studentSheet.getDataRange().getValues();
-    
+    const map = getHeaderMap(data[0]);
+    const idIdx = map['student id'] ?? 0;
+
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] && data[i][0].toString() === studentId.toString()) {
+      if (data[i][idIdx] && data[i][idIdx].toString().trim().toLowerCase() === studentId.toString().trim().toLowerCase()) {
         studentSheet.deleteRow(i + 1);
         return { success: true };
       }
@@ -583,24 +671,30 @@ function deleteStudent(studentId) {
 
 function getDashboardData() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
-    const dataSheet = ss.getSheetByName(DATASHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
+    const dataSheet = getSheetByNameCaseInsensitive(ss, DATASHEET);
 
-    if (!studentSheet || !dataSheet) {
-      return { success: false, error: 'Required sheets not found' };
+    if (!studentSheet) {
+      return { success: false, error: 'Student sheet not found in spreadsheet' };
     }
 
     const studentData = studentSheet.getDataRange().getValues();
-    const salesData = dataSheet.getDataRange().getValues();
+    const salesData = dataSheet ? dataSheet.getDataRange().getValues() : [];
 
     const totalStudents = Math.max(0, studentData.length - 1);
 
     let totalRevenue = 0;
-    for (let i = 1; i < salesData.length; i++) {
-      const price = Number(salesData[i][5]) || 0;
-      const quantity = Number(salesData[i][4]) || 0;
-      totalRevenue += price * quantity;
+    if (salesData.length > 1) {
+      const salesMap = getHeaderMap(salesData[0]);
+      const priceIdx = salesMap['price'] ?? 5;
+      const qtyIdx = salesMap['quantity'] ?? 4;
+      
+      for (let i = 1; i < salesData.length; i++) {
+        const price = Number(salesData[i][priceIdx]) || 0;
+        const quantity = Number(salesData[i][qtyIdx]) || 0;
+        totalRevenue += price * quantity;
+      }
     }
 
     let totalDressValue = 0;
@@ -608,42 +702,65 @@ function getDashboardData() {
     let totalRemainingDress = 0;
     let lowDressStudents = 0;
 
-    for (let i = 1; i < studentData.length; i++) {
-      const price = Number(studentData[i][4]) || 0;
-      const Dress = Number(studentData[i][5]) || 0;
-      const remaining = Number(studentData[i][6]) || 0;
-      totalDressValue += price * remaining;
-      totalDress += Dress;
-      totalRemainingDress += remaining;
+    if (studentData.length > 1) {
+      const stuMap = getHeaderMap(studentData[0]);
+      const priceIdx = stuMap['price'] ?? 4;
+      const totalIdx = stuMap['total dress'] ?? 5;
+      const remIdx = stuMap['remaining dress'] ?? 6;
 
-      if (remaining < Dress * 0.2) {
-        lowDressStudents++;
+      for (let i = 1; i < studentData.length; i++) {
+        const price = Number(studentData[i][priceIdx]) || 0;
+        const Dress = Number(studentData[i][totalIdx]) || 0;
+        const remaining = Number(studentData[i][remIdx]) || 0;
+        totalDressValue += price * remaining;
+        totalDress += Dress;
+        totalRemainingDress += remaining;
+
+        if (remaining < Dress * 0.2 || remaining === 0) {
+          lowDressStudents++;
+        }
       }
     }
 
     let classSales = {};
     let classRevenue = {};
-
-    for (let i = 1; i < salesData.length; i++) {
-      const className = salesData[i][2] || 'Uncategorized';
-      const quantity = Number(salesData[i][4]) || 0;
-      const price = Number(salesData[i][5]) || 0;
-
-      classSales[className] = (classSales[className] || 0) + quantity;
-      classRevenue[className] = (classRevenue[className] || 0) + (price * quantity);
-    }
-
     let studentSales = {};
-    for (let i = 1; i < salesData.length; i++) {
-      const studentName = salesData[i][1];
-      const quantity = Number(salesData[i][4]) || 0;
-      const price = Number(salesData[i][5]) || 0;
+    let dailySales = {};
 
-      if (!studentSales[studentName]) {
-        studentSales[studentName] = { quantity: 0, revenue: 0 };
+    if (salesData.length > 1) {
+      const salesMap = getHeaderMap(salesData[0]);
+      const dateIdx = salesMap['timestamp'] ?? 0;
+      const nameIdx = salesMap['student name'] ?? 1;
+      const classIdx = salesMap['class'] ?? 2;
+      const qtyIdx = salesMap['quantity'] ?? 4;
+      const priceIdx = salesMap['price'] ?? 5;
+
+      for (let i = 1; i < salesData.length; i++) {
+        const className = salesData[i][classIdx] || 'Uncategorized';
+        const studentName = salesData[i][nameIdx] || 'Unknown';
+        const quantity = Number(salesData[i][qtyIdx]) || 0;
+        const price = Number(salesData[i][priceIdx]) || 0;
+        const dateStr = salesData[i][dateIdx];
+
+        classSales[className] = (classSales[className] || 0) + quantity;
+        classRevenue[className] = (classRevenue[className] || 0) + (price * quantity);
+
+        if (!studentSales[studentName]) {
+          studentSales[studentName] = { quantity: 0, revenue: 0 };
+        }
+        studentSales[studentName].quantity += quantity;
+        studentSales[studentName].revenue += price * quantity;
+
+        if (dateStr) {
+          const date = new Date(dateStr);
+          const dateKey = !isNaN(date.getTime()) ? date.toLocaleDateString() : dateStr.toString().split(' ')[0];
+          if (!dailySales[dateKey]) {
+            dailySales[dateKey] = { quantity: 0, revenue: 0 };
+          }
+          dailySales[dateKey].quantity += quantity;
+          dailySales[dateKey].revenue += price * quantity;
+        }
       }
-      studentSales[studentName].quantity += quantity;
-      studentSales[studentName].revenue += price * quantity;
     }
 
     let topStudents = Object.keys(studentSales).map(function(name) {
@@ -655,23 +772,6 @@ function getDashboardData() {
     }).sort(function(a, b) {
       return b.revenue - a.revenue;
     }).slice(0, 5);
-
-    let dailySales = {};
-    for (let i = 1; i < salesData.length; i++) {
-      const dateStr = salesData[i][0];
-      if (dateStr) {
-        const date = new Date(dateStr);
-        const dateKey = date.toLocaleDateString();
-        const quantity = Number(salesData[i][4]) || 0;
-        const price = Number(salesData[i][5]) || 0;
-
-        if (!dailySales[dateKey]) {
-          dailySales[dateKey] = { quantity: 0, revenue: 0 };
-        }
-        dailySales[dateKey].quantity += quantity;
-        dailySales[dateKey].revenue += price * quantity;
-      }
-    }
 
     return {
       success: true,
@@ -691,7 +791,7 @@ function getDashboardData() {
     };
   } catch (error) {
     console.error('Error in getDashboardData: ' + error.toString());
-    return { success: false, error: 'Error loading dashboard data' };
+    return { success: false, error: 'Error loading dashboard data: ' + error.message };
   }
 }
 
@@ -701,9 +801,9 @@ function getCurrencySymbol() {
 
 function recalculateDress() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
-    const dataSheet = ss.getSheetByName(DATASHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
+    const dataSheet = getSheetByNameCaseInsensitive(ss, DATASHEET);
     
     if (!studentSheet || !dataSheet) {
       return { success: false, error: 'Required sheets not found' };
@@ -712,31 +812,42 @@ function recalculateDress() {
     const studentData = studentSheet.getDataRange().getValues();
     const salesData = dataSheet.getDataRange().getValues();
     
+    const salesMap = getHeaderMap(salesData[0]);
+    const idSalesIdx = salesMap['student code'] ?? salesMap['student id'] ?? 6;
+    const qtySalesIdx = salesMap['quantity'] ?? 4;
+
     let salesCount = {};
     
     for (let i = 1; i < salesData.length; i++) {
-      const studentId = salesData[i][6];
-      const quantity = parseInt(salesData[i][4]) || 0;
+      const studentId = salesData[i][idSalesIdx];
+      const quantity = parseInt(salesData[i][qtySalesIdx]) || 0;
       
       if (studentId) {
-        if (!salesCount[studentId]) {
-          salesCount[studentId] = 0;
+        const key = studentId.toString().trim().toLowerCase();
+        if (!salesCount[key]) {
+          salesCount[key] = 0;
         }
-        salesCount[studentId] += quantity;
+        salesCount[key] += quantity;
       }
     }
     
+    const stuMap = getHeaderMap(studentData[0]);
+    const idStuIdx = stuMap['student id'] ?? 0;
+    const totalStuIdx = stuMap['total dress'] ?? 5;
+    const remStuIdx = stuMap['remaining dress'] ?? 6;
+
     let updatedCount = 0;
     
     for (let i = 1; i < studentData.length; i++) {
-      const studentId = studentData[i][0];
-      const totalDress = parseInt(studentData[i][5]) || 0;
+      const studentId = studentData[i][idStuIdx];
+      const totalDress = parseInt(studentData[i][totalStuIdx]) || 0;
       
       if (studentId) {
-        const totalSold = salesCount[studentId] || 0;
+        const key = studentId.toString().trim().toLowerCase();
+        const totalSold = salesCount[key] || 0;
         const newRemainingDress = totalDress - totalSold;
         
-        studentSheet.getRange(i + 1, 7).setValue(newRemainingDress);
+        studentSheet.getRange(i + 1, remStuIdx + 1).setValue(newRemainingDress);
         updatedCount++;
       }
     }
@@ -754,8 +865,8 @@ function recalculateDress() {
 
 function generateMissingQRCodes() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       return {
@@ -769,23 +880,26 @@ function generateMissingQRCodes() {
     }
     
     const data = studentSheet.getDataRange().getValues();
-    const headers = data[0];
+    const map = getHeaderMap(data[0]);
     
-    let qrColumnIndex = headers.indexOf('QR URL');
+    let qrColumnIndex = map['qr url'] ?? map['qr code'] ?? -1;
     
     if (qrColumnIndex === -1) {
       studentSheet.getRange(1, studentSheet.getLastColumn() + 1).setValue('QR URL');
       qrColumnIndex = studentSheet.getLastColumn() - 1;
     }
     
+    const idIdx = map['student id'] ?? 0;
+    const nameIdx = map['student name'] ?? 2;
+
     let processedCount = 0;
     let skippedCount = 0;
     let errorCount = 0;
     
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      const studentId = row[0];
-      const studentName = row[2];
+      const studentId = row[idIdx];
+      const studentName = row[nameIdx];
       const existingQrUrl = row[qrColumnIndex];
       
       if (!studentId || !studentName) {
@@ -793,7 +907,7 @@ function generateMissingQRCodes() {
         continue;
       }
       
-      if (existingQrUrl && existingQrUrl.toString().trim() !== '') {
+      if (existingQrUrl && existingQrUrl.toString().trim() !== '' && !existingQrUrl.toString().includes('failed')) {
         skippedCount++;
         continue;
       }
@@ -809,7 +923,7 @@ function generateMissingQRCodes() {
           errorCount++;
         }
         
-        Utilities.sleep(200);
+        Utilities.sleep(150);
         
       } catch (error) {
         console.error(`Error generating QR for ${studentId}:`, error);
@@ -841,16 +955,16 @@ function generateMissingQRCodes() {
 
 function checkQRCodeStatus() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       return { success: false, error: 'Students sheet not found' };
     }
     
     const data = studentSheet.getDataRange().getValues();
-    const headers = data[0];
-    const qrColumnIndex = headers.indexOf('QR URL');
+    const map = getHeaderMap(data[0]);
+    const qrColumnIndex = map['qr url'] ?? map['qr code'] ?? -1;
     
     if (qrColumnIndex === -1) {
       return {
@@ -867,7 +981,7 @@ function checkQRCodeStatus() {
     
     for (let i = 1; i < data.length; i++) {
       const qrUrl = data[i][qrColumnIndex];
-      if (qrUrl && qrUrl.toString().trim() !== '') {
+      if (qrUrl && qrUrl.toString().trim() !== '' && !qrUrl.toString().includes('failed')) {
         withQR++;
       } else {
         withoutQR++;
@@ -890,19 +1004,22 @@ function checkQRCodeStatus() {
 
 function getAllClasses() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       return [];
     }
     
     const data = studentSheet.getDataRange().getValues();
+    const map = getHeaderMap(data[0]);
+    const classIdx = map['class'] ?? 1;
+
     const classes = new Set();
     
     for (let i = 1; i < data.length; i++) {
-      if (data[i][1]) {
-        classes.add(data[i][1]);
+      if (data[i][classIdx]) {
+        classes.add(data[i][classIdx]);
       }
     }
     
@@ -915,32 +1032,44 @@ function getAllClasses() {
 
 function getStudentsForPrinting(studentIds) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       return [];
     }
     
     const data = studentSheet.getDataRange().getValues();
+    const map = getHeaderMap(data[0]);
+    const idIdx = map['student id'] ?? 0;
+    const classIdx = map['class'] ?? 1;
+    const nameIdx = map['student name'] ?? 2;
+    const eventIdx = map['song/event name'] ?? 3;
+    const priceIdx = map['price'] ?? 4;
+    const totalDressIdx = map['total dress'] ?? 5;
+    const remDressIdx = map['remaining dress'] ?? 6;
+    const phoneIdx = map['phone no'] ?? 7;
+    const dressCodeIdx = map['dress code'] ?? 8;
+    const qrUrlIdx = map['qr url'] ?? 9;
+
     const students = [];
-    const idSet = new Set(studentIds);
+    const idSet = new Set(studentIds.map(id => id.toString().trim().toLowerCase()));
     
     for (let i = 1; i < data.length; i++) {
-      const studentId = data[i][0];
+      const studentId = data[i][idIdx];
       
-      if (studentId && idSet.has(studentId)) {
+      if (studentId && idSet.has(studentId.toString().trim().toLowerCase())) {
         students.push({
           id: studentId,
-          class: data[i][1] || '',
-          name: data[i][2] || '',
-          songEvent: data[i][3] || '',
-          price: data[i][4] || 0,
-          totalDress: data[i][5] || 0,
-          remainingDress: data[i][6] || 0,
-          phoneNo: data[i][7] || '',
-          dressCode: data[i][8] || '',
-          qrUrl: data[i][9] || ''
+          class: data[i][classIdx] || '',
+          name: data[i][nameIdx] || '',
+          songEvent: data[i][eventIdx] || '',
+          price: data[i][priceIdx] || 0,
+          totalDress: data[i][totalDressIdx] || 0,
+          remainingDress: data[i][remDressIdx] || 0,
+          phoneNo: data[i][phoneIdx] || '',
+          dressCode: data[i][dressCodeIdx] || '',
+          qrUrl: data[i][qrUrlIdx] || ''
         });
       }
     }
@@ -954,21 +1083,21 @@ function getStudentsForPrinting(studentIds) {
 
 function initializeSheets() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = getSpreadsheet();
     
-    let dataSheet = ss.getSheetByName(DATASHEET);
+    let dataSheet = getSheetByNameCaseInsensitive(ss, DATASHEET);
     if (!dataSheet) {
       dataSheet = ss.insertSheet(DATASHEET);
       dataSheet.appendRow(['Timestamp', 'Student Name', 'Class', 'Song/Event', 'Quantity', 'Price', 'Student Code', 'Phone No', 'Dress Code', 'Total Amount']);
     }
     
-    let studentSheet = ss.getSheetByName(STUDENTSHEET);
+    let studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     if (!studentSheet) {
       studentSheet = ss.insertSheet(STUDENTSHEET);
       studentSheet.appendRow(['Student ID', 'Class', 'Student Name', 'Song/Event Name', 'Price', 'Total Dress', 'Remaining Dress', 'Phone No', 'Dress Code', 'QR URL', 'Registration Date']);
     }
     
-    let dropdownSheet = ss.getSheetByName(DROPDOWN_SHEET);
+    let dropdownSheet = getSheetByNameCaseInsensitive(ss, DROPDOWN_SHEET);
     if (!dropdownSheet) {
       dropdownSheet = ss.insertSheet(DROPDOWN_SHEET);
       dropdownSheet.getRange('A1').setValue('Class');
@@ -1000,15 +1129,16 @@ function initializeSheets() {
 
 function testSheets() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = getSpreadsheet();
     const sheets = ss.getSheets();
     const sheetNames = sheets.map(sheet => sheet.getName());
     
     return {
+      spreadsheetId: ss.getId(),
       sheets: sheetNames,
-      hasDataSheet: sheetNames.includes(DATASHEET),
-      hasStudentSheet: sheetNames.includes(STUDENTSHEET),
-      hasDropdownSheet: sheetNames.includes(DROPDOWN_SHEET)
+      hasDataSheet: sheetNames.some(s => s.toLowerCase() === DATASHEET.toLowerCase()),
+      hasStudentSheet: sheetNames.some(s => s.toLowerCase() === STUDENTSHEET.toLowerCase()),
+      hasDropdownSheet: sheetNames.some(s => s.toLowerCase() === DROPDOWN_SHEET.toLowerCase())
     };
   } catch (error) {
     console.error('Error in testSheets: ' + error.toString());
@@ -1018,24 +1148,20 @@ function testSheets() {
 
 function bulkUpdateStudents(studentUpdates) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       return { success: false, error: 'Students sheet not found' };
     }
     
     const data = studentSheet.getDataRange().getValues();
-    const headers = data[0];
+    const map = getHeaderMap(data[0]);
     
-    const idCol = headers.indexOf('Student ID') + 1;
-    const songEventCol = headers.indexOf('Song/Event Name') + 1;
-    const priceCol = headers.indexOf('Price') + 1;
-    const dressCodeCol = headers.indexOf('Dress Code') + 1;
-    
-    if (idCol === 0 || songEventCol === 0 || priceCol === 0 || dressCodeCol === 0) {
-      return { success: false, error: 'Required columns not found' };
-    }
+    const idCol = (map['student id'] !== undefined ? map['student id'] : 0) + 1;
+    const songEventCol = (map['song/event name'] !== undefined ? map['song/event name'] : 3) + 1;
+    const priceCol = (map['price'] !== undefined ? map['price'] : 4) + 1;
+    const dressCodeCol = (map['dress code'] !== undefined ? map['dress code'] : 8) + 1;
     
     let updatedCount = 0;
     const errors = [];
@@ -1044,13 +1170,14 @@ function bulkUpdateStudents(studentUpdates) {
     for (let i = 1; i < data.length; i++) {
       const studentId = data[i][idCol - 1];
       if (studentId) {
-        studentMap[studentId] = i + 1;
+        studentMap[studentId.toString().trim().toLowerCase()] = i + 1;
       }
     }
     
-    studentUpdates.forEach((update, index) => {
+    studentUpdates.forEach((update) => {
       try {
-        const row = studentMap[update.studentId];
+        const key = update.studentId ? update.studentId.toString().trim().toLowerCase() : '';
+        const row = studentMap[key];
         if (row) {
           if (update.songEvent !== undefined && update.songEvent !== null && update.songEvent !== '') {
             studentSheet.getRange(row, songEventCol).setValue(update.songEvent);
@@ -1089,9 +1216,9 @@ function bulkUpdateStudents(studentUpdates) {
 
 function getDropdownDataForBulkEdit() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const dropdownSheet = ss.getSheetByName(DROPDOWN_SHEET);
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const dropdownSheet = getSheetByNameCaseInsensitive(ss, DROPDOWN_SHEET);
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     const result = {
       songEvents: [],
@@ -1103,16 +1230,14 @@ function getDropdownDataForBulkEdit() {
     if (dropdownSheet) {
       const songData = dropdownSheet.getRange('B:B').getValues();
       const songEvents = songData.filter(String).map(row => row[0]);
-      if (songEvents.length > 0 && songEvents[0] === 'Song/Event Name') {
+      if (songEvents.length > 0 && songEvents[0].toString().toLowerCase().includes('song')) {
         songEvents.shift();
       }
       result.songEvents = [...new Set(songEvents)].filter(Boolean);
-    }
-    
-    if (dropdownSheet) {
+
       const dressData = dropdownSheet.getRange('C:C').getValues();
       const dressCodes = dressData.filter(String).map(row => row[0]);
-      if (dressCodes.length > 0 && dressCodes[0] === 'Dress Code') {
+      if (dressCodes.length > 0 && dressCodes[0].toString().toLowerCase().includes('dress')) {
         dressCodes.shift();
       }
       result.dressCodes = [...new Set(dressCodes)].filter(Boolean);
@@ -1120,10 +1245,12 @@ function getDropdownDataForBulkEdit() {
     
     if (studentSheet) {
       const data = studentSheet.getDataRange().getValues();
+      const map = getHeaderMap(data[0]);
+      const priceIdx = map['price'] ?? 4;
+
       const prices = [];
-      
       for (let i = 1; i < data.length; i++) {
-        const price = parseFloat(data[i][4]);
+        const price = parseFloat(data[i][priceIdx]);
         if (!isNaN(price) && price > 0) {
           prices.push(price);
         }
@@ -1156,18 +1283,22 @@ function getDropdownDataForBulkEdit() {
 
 function getQRCodeForDownload(studentId) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       return { success: false, error: 'Students sheet not found' };
     }
     
     const data = studentSheet.getDataRange().getValues();
-    
+    const map = getHeaderMap(data[0]);
+    const idIdx = map['student id'] ?? 0;
+    const nameIdx = map['student name'] ?? 2;
+    const qrUrlIdx = map['qr url'] ?? 9;
+
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] && data[i][0].toString() === studentId.toString()) {
-        const qrUrl = data[i][9] || '';
+      if (data[i][idIdx] && data[i][idIdx].toString().trim().toLowerCase() === studentId.toString().trim().toLowerCase()) {
+        const qrUrl = data[i][qrUrlIdx] || '';
         
         if (!qrUrl || qrUrl.trim() === '') {
           return { 
@@ -1187,7 +1318,7 @@ function getQRCodeForDownload(studentId) {
             const base64 = Utilities.base64Encode(blob.getBytes());
             const dataUri = 'data:' + blob.getContentType() + ';base64,' + base64;
             
-            const studentName = data[i][2] || 'Unknown';
+            const studentName = data[i][nameIdx] || 'Unknown';
             const cleanName = studentName.replace(/[^a-z0-9]/gi, '_').replace(/_{2,}/g, '_');
             const filename = `QR_${studentId}_${cleanName}.png`;
             
@@ -1203,7 +1334,7 @@ function getQRCodeForDownload(studentId) {
           console.log('Direct fetch failed:', fetchError);
         }
         
-        const studentName = data[i][2] || 'Unknown';
+        const studentName = data[i][nameIdx] || 'Unknown';
         return {
           success: true,
           qrUrl: qrUrl,
@@ -1232,81 +1363,19 @@ function generatePDFReceipt(receiptData) {
       <html>
       <head>
         <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: #f5f5f5;
-          }
-          .receipt-container {
-            max-width: 400px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          }
-          .header {
-            text-align: center;
-            border-bottom: 2px solid #10b981;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-          }
-          .school-name {
-            font-size: 24px;
-            font-weight: bold;
-            color: #10b981;
-            margin-bottom: 5px;
-          }
-          .receipt-title {
-            font-size: 18px;
-            color: #333;
-            margin-bottom: 10px;
-          }
-          .receipt-info {
-            margin-bottom: 20px;
-          }
-          .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            padding-bottom: 8px;
-            border-bottom: 1px dashed #ddd;
-          }
-          .info-label {
-            font-weight: bold;
-            color: #555;
-          }
-          .info-value {
-            color: #333;
-          }
-          .total-section {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            border-left: 4px solid #10b981;
-          }
-          .total-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 18px;
-            font-weight: bold;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
-            color: #666;
-            font-size: 12px;
-          }
-          .date-time {
-            text-align: center;
-            color: #666;
-            margin-bottom: 15px;
-            font-size: 14px;
-          }
+          body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+          .receipt-container { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .header { text-align: center; border-bottom: 2px solid #10b981; padding-bottom: 15px; margin-bottom: 20px; }
+          .school-name { font-size: 24px; font-weight: bold; color: #10b981; margin-bottom: 5px; }
+          .receipt-title { font-size: 18px; color: #333; margin-bottom: 10px; }
+          .receipt-info { margin-bottom: 20px; }
+          .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #ddd; }
+          .info-label { font-weight: bold; color: #555; }
+          .info-value { color: #333; }
+          .total-section { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981; }
+          .total-row { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; }
+          .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
+          .date-time { text-align: center; color: #666; margin-bottom: 15px; font-size: 14px; }
         </style>
       </head>
       <body>
@@ -1321,56 +1390,24 @@ function generatePDFReceipt(receiptData) {
           </div>
           
           <div class="receipt-info">
-            <div class="info-row">
-              <span class="info-label">Student:</span>
-              <span class="info-value">${receiptData.studentName || ''}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Class:</span>
-              <span class="info-value">${receiptData.className || ''}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Event:</span>
-              <span class="info-value">${receiptData.songEvent || ''}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Student ID:</span>
-              <span class="info-value">${receiptData.studentId || ''}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Phone:</span>
-              <span class="info-value">${receiptData.phoneNo || 'N/A'}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Dress Code:</span>
-              <span class="info-value">${receiptData.dressCode || 'N/A'}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Transaction ID:</span>
-              <span class="info-value">${receiptData.transactionId || generateTransactionId()}</span>
-            </div>
+            <div class="info-row"><span class="info-label">Student:</span><span class="info-value">${receiptData.studentName || ''}</span></div>
+            <div class="info-row"><span class="info-label">Class:</span><span class="info-value">${receiptData.className || ''}</span></div>
+            <div class="info-row"><span class="info-label">Event:</span><span class="info-value">${receiptData.songEvent || ''}</span></div>
+            <div class="info-row"><span class="info-label">Student ID:</span><span class="info-value">${receiptData.studentId || ''}</span></div>
+            <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">${receiptData.phoneNo || 'N/A'}</span></div>
+            <div class="info-row"><span class="info-label">Dress Code:</span><span class="info-value">${receiptData.dressCode || 'N/A'}</span></div>
+            <div class="info-row"><span class="info-label">Transaction ID:</span><span class="info-value">${receiptData.transactionId || generateTransactionId()}</span></div>
           </div>
           
           <div class="total-section">
-            <div class="info-row">
-              <span class="info-label">Price per Dress:</span>
-              <span class="info-value">₹${parseFloat(receiptData.price || 0).toFixed(2)}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Quantity:</span>
-              <span class="info-value">${receiptData.quantity || 0}</span>
-            </div>
-            <div class="total-row">
-              <span class="info-label">TOTAL AMOUNT:</span>
-              <span class="info-value">₹${parseFloat(receiptData.totalAmount || 0).toFixed(2)}</span>
-            </div>
+            <div class="info-row"><span class="info-label">Price per Dress:</span><span class="info-value">₹${parseFloat(receiptData.price || 0).toFixed(2)}</span></div>
+            <div class="info-row"><span class="info-label">Quantity:</span><span class="info-value">${receiptData.quantity || 0}</span></div>
+            <div class="total-row"><span class="info-label">TOTAL AMOUNT:</span><span class="info-value">₹${parseFloat(receiptData.totalAmount || 0).toFixed(2)}</span></div>
           </div>
           
           <div class="footer">
             <p>Thank you for your purchase!</p>
-            <p>SUCCESS SCHOOL INDI<br>
-            Contact: 9964882070<br>
-            This is a computer generated receipt</p>
+            <p>SUCCESS SCHOOL INDI<br>Contact: 9964882070<br>This is a computer generated receipt</p>
           </div>
         </div>
       </body>
@@ -1429,7 +1466,7 @@ function generateTransactionId() {
 
 function getWhatsAppLink(phoneNo, receiptData) {
   try {
-    const cleanPhone = phoneNo.replace(/\D/g, '');
+    const cleanPhone = phoneNo.toString().replace(/\D/g, '');
     let whatsappPhone = cleanPhone;
     
     if (!cleanPhone.startsWith('91') && cleanPhone.length === 10) {
@@ -1482,8 +1519,6 @@ function sendReceiptViaWhatsApp(phoneNumber, receiptData) {
       throw new Error(result.error);
     }
     
-    Logger.log('WhatsApp Link Generated:', result.whatsappLink);
-    
     return {
       success: true,
       whatsappLink: result.whatsappLink,
@@ -1503,24 +1538,29 @@ function sendReceiptViaWhatsApp(phoneNumber, receiptData) {
 
 function getStudentPhoneNumber(studentId) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const studentSheet = ss.getSheetByName(STUDENTSHEET);
+    const ss = getSpreadsheet();
+    const studentSheet = getSheetByNameCaseInsensitive(ss, STUDENTSHEET);
     
     if (!studentSheet) {
       return { success: false, error: 'Students sheet not found' };
     }
     
     const data = studentSheet.getDataRange().getValues();
-    
+    const map = getHeaderMap(data[0]);
+    const idIdx = map['student id'] ?? 0;
+    const phoneIdx = map['phone no'] ?? 7;
+    const nameIdx = map['student name'] ?? 2;
+    const classIdx = map['class'] ?? 1;
+
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] && data[i][0].toString() === studentId.toString()) {
-        const phoneNo = data[i][7] || '';
+      if (data[i][idIdx] && data[i][idIdx].toString().trim().toLowerCase() === studentId.toString().trim().toLowerCase()) {
+        const phoneNo = data[i][phoneIdx] || '';
         if (phoneNo && phoneNo.toString().trim() !== '') {
           return {
             success: true,
             phoneNumber: phoneNo.toString().trim(),
-            studentName: data[i][2] || '',
-            className: data[i][1] || ''
+            studentName: data[i][nameIdx] || '',
+            className: data[i][classIdx] || ''
           };
         } else {
           return {
@@ -1579,8 +1619,8 @@ function processDressSaleWithReceipt(formObject) {
 
 function getAllFeeTypes() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const dropdownSheet = ss.getSheetByName(DROPDOWN_SHEET);
+    const ss = getSpreadsheet();
+    const dropdownSheet = getSheetByNameCaseInsensitive(ss, DROPDOWN_SHEET);
     
     if (!dropdownSheet) {
       return { success: false, error: 'Dropdown sheet not found' };
@@ -1591,7 +1631,7 @@ function getAllFeeTypes() {
     
     const feeTypes = [];
     for (let i = 3; i < headers.length; i++) {
-      if (headers[i] && headers[i].includes('Fees')) {
+      if (headers[i] && headers[i].toString().includes('Fees')) {
         feeTypes.push({
           name: headers[i],
           column: i
@@ -1613,8 +1653,8 @@ function getAllFeeTypes() {
 
 function getClassFees(className) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const dropdownSheet = ss.getSheetByName(DROPDOWN_SHEET);
+    const ss = getSpreadsheet();
+    const dropdownSheet = getSheetByNameCaseInsensitive(ss, DROPDOWN_SHEET);
     
     if (!dropdownSheet) {
       return { success: false, error: 'Dropdown sheet not found' };
@@ -1624,11 +1664,11 @@ function getClassFees(className) {
     const headers = data[0];
     
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === className) {
+      if (data[i][0] && data[i][0].toString().trim().toLowerCase() === className.toString().trim().toLowerCase()) {
         const fees = {};
         
         for (let j = 3; j < headers.length; j++) {
-          if (headers[j] && headers[j].includes('Fees')) {
+          if (headers[j] && headers[j].toString().includes('Fees')) {
             const feeValue = parseFloat(data[i][j]) || 0;
             if (feeValue > 0) {
               fees[headers[j]] = feeValue;
@@ -1660,8 +1700,8 @@ function getClassFees(className) {
 
 function saveClassFees(classFees) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let dropdownSheet = ss.getSheetByName(DROPDOWN_SHEET);
+    const ss = getSpreadsheet();
+    let dropdownSheet = getSheetByNameCaseInsensitive(ss, DROPDOWN_SHEET);
     
     if (!dropdownSheet) {
       dropdownSheet = ss.insertSheet(DROPDOWN_SHEET);
@@ -1683,7 +1723,7 @@ function saveClassFees(classFees) {
     let classRow = -1;
     
     for (let i = 0; i < data.length; i++) {
-      if (data[i][0] === classFees.className) {
+      if (data[i][0] && data[i][0].toString().trim().toLowerCase() === classFees.className.toString().trim().toLowerCase()) {
         classRow = i + 1;
         break;
       }
@@ -1730,8 +1770,8 @@ function saveClassFees(classFees) {
 
 function addNewFeeType(feeName) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const dropdownSheet = ss.getSheetByName(DROPDOWN_SHEET);
+    const ss = getSpreadsheet();
+    const dropdownSheet = getSheetByNameCaseInsensitive(ss, DROPDOWN_SHEET);
     
     if (!dropdownSheet) {
       return { success: false, error: 'Dropdown sheet not found' };
@@ -1753,8 +1793,8 @@ function addNewFeeType(feeName) {
 
 function getAllFeeCategories() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const dropdownSheet = ss.getSheetByName(DROPDOWN_SHEET);
+    const ss = getSpreadsheet();
+    const dropdownSheet = getSheetByNameCaseInsensitive(ss, DROPDOWN_SHEET);
     
     if (!dropdownSheet) {
       return { success: false, error: 'Dropdown sheet not found' };
@@ -1765,7 +1805,7 @@ function getAllFeeCategories() {
     
     const feeCategories = [];
     for (let i = 3; i < headers.length; i++) {
-      if (headers[i] && headers[i].includes('Fees')) {
+      if (headers[i] && headers[i].toString().includes('Fees')) {
         feeCategories.push(headers[i]);
       }
     }
@@ -1783,8 +1823,8 @@ function getAllFeeCategories() {
 
 function initializeFeesInDropdown() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let dropdownSheet = ss.getSheetByName(DROPDOWN_SHEET);
+    const ss = getSpreadsheet();
+    let dropdownSheet = getSheetByNameCaseInsensitive(ss, DROPDOWN_SHEET);
     
     if (!dropdownSheet) {
       dropdownSheet = ss.insertSheet(DROPDOWN_SHEET);
@@ -1823,8 +1863,8 @@ function initializeFeesInDropdown() {
 
 function getUnpaidFees(studentId) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const dataSheet = ss.getSheetByName(DATASHEET);
+    const ss = getSpreadsheet();
+    const dataSheet = getSheetByNameCaseInsensitive(ss, DATASHEET);
     
     if (!dataSheet) {
       return { success: true, unpaidFees: [], totalUnpaid: 0 };
@@ -1835,16 +1875,18 @@ function getUnpaidFees(studentId) {
     
     const feeColumns = [];
     headers.forEach((header, index) => {
-      if (header.includes('Fees') && !['Total Fees', 'Grand Total'].includes(header)) {
+      if (header && header.toString().includes('Fees') && !['Total Fees', 'Grand Total'].includes(header.toString())) {
         feeColumns.push({ name: header, index: index });
       }
     });
     
     let totalUnpaid = 0;
     const unpaidFees = [];
-    
+    const map = getHeaderMap(headers);
+    const idIdx = map['student code'] ?? map['student id'] ?? 6;
+
     for (let i = 1; i < data.length; i++) {
-      if (data[i][6] && data[i][6].toString() === studentId.toString()) {
+      if (data[i][idIdx] && data[i][idIdx].toString().trim().toLowerCase() === studentId.toString().trim().toLowerCase()) {
         const timestamp = data[i][0];
         
         feeColumns.forEach(feeCol => {
@@ -1877,8 +1919,8 @@ function getUnpaidFees(studentId) {
 
 function processAdditionalPayment(formObject) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const dataSheet = ss.getSheetByName(DATASHEET);
+    const ss = getSpreadsheet();
+    const dataSheet = getSheetByNameCaseInsensitive(ss, DATASHEET);
     
     if (!dataSheet) {
       return { success: false, error: 'Data sheet not found' };
@@ -1981,8 +2023,8 @@ function processAdditionalPayment(formObject) {
 
 function getStudentFeeHistory(studentId) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const dataSheet = ss.getSheetByName(DATASHEET);
+    const ss = getSpreadsheet();
+    const dataSheet = getSheetByNameCaseInsensitive(ss, DATASHEET);
     
     if (!dataSheet) {
       return { success: true, transactions: [] };
@@ -1990,11 +2032,13 @@ function getStudentFeeHistory(studentId) {
     
     const data = dataSheet.getDataRange().getValues();
     const headers = data[0];
-    
+    const map = getHeaderMap(headers);
+    const idIdx = map['student code'] ?? map['student id'] ?? 6;
+
     const transactions = [];
     
     for (let i = 1; i < data.length; i++) {
-      if (data[i][6] && data[i][6].toString() === studentId.toString()) {
+      if (data[i][idIdx] && data[i][idIdx].toString().trim().toLowerCase() === studentId.toString().trim().toLowerCase()) {
         const transaction = {
           timestamp: data[i][0],
           type: parseFloat(data[i][4]) > 0 ? 'dress_sale' : 'fee_payment',
@@ -2008,7 +2052,7 @@ function getStudentFeeHistory(studentId) {
         
         transaction.fees = {};
         headers.forEach((header, index) => {
-          if (header.includes('Fees') && !['Total Fees', 'Grand Total'].includes(header)) {
+          if (header && header.toString().includes('Fees') && !['Total Fees', 'Grand Total'].includes(header.toString())) {
             const feeAmount = parseFloat(data[i][index]) || 0;
             if (feeAmount > 0) {
               transaction.fees[header] = feeAmount;
