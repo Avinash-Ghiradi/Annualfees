@@ -85,7 +85,7 @@
     .header-controls {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 15px;
       flex-wrap: wrap;
     }
 
@@ -103,21 +103,23 @@
     .user-controls {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 10px;
     }
 
-    #refresh-btn {
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
+    #refresh-btn, #sync-btn, #url-config-btn {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
       color: white;
       border-radius: 8px;
-      padding: 8px 12px;
+      padding: 6px 12px;
       transition: all 0.3s;
+      font-size: 0.85rem;
+      font-weight: 600;
     }
 
-    #refresh-btn:hover {
-      background: rgba(255,255,255,0.2);
-      transform: rotate(45deg);
+    #refresh-btn:hover, #sync-btn:hover, #url-config-btn:hover {
+      background: rgba(255,255,255,0.3);
+      color: white;
     }
 
     .user-menu {
@@ -128,11 +130,6 @@
       background: rgba(255,255,255,0.1);
       border-radius: 8px;
       cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .user-menu:hover {
-      background: rgba(255,255,255,0.2);
     }
 
     .user-avatar {
@@ -275,7 +272,7 @@
     .btn {
       border-radius: 8px;
       font-weight: 600;
-      padding: 12px 24px;
+      padding: 10px 20px;
       transition: all 0.3s;
       border: none;
     }
@@ -296,12 +293,6 @@
       border: none;
     }
 
-    .btn-success:hover {
-      background: linear-gradient(135deg, #047857 0%, #065f46 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
-    }
-
     /* QR SCANNER */
     #qr-reader {
       width: 100%;
@@ -310,19 +301,6 @@
       border-radius: 12px;
       padding: 20px;
       border: 1px solid #e5e7eb;
-    }
-
-    /* MODAL STYLES */
-    .modal-header {
-      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-      color: white;
-      border-radius: 12px 12px 0 0;
-      padding: 20px;
-    }
-
-    .modal-title {
-      font-weight: 700;
-      font-size: 1.25rem;
     }
 
     /* THERMAL RECEIPT STYLES */
@@ -355,13 +333,6 @@
       margin-top: 10px;
       padding-top: 10px;
       font-weight: bold;
-    }
-
-    .receipt-footer {
-      text-align: center;
-      margin-top: 15px;
-      font-size: 9px;
-      color: #666;
     }
 
     /* LABEL PRINTING STYLES */
@@ -466,72 +437,10 @@
       color: white;
     }
 
-    /* LOADING OVERLAY */
-    .loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.9);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-
-    /* SELECT ALL CONTROLS */
-    .select-controls {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-
-    .selected-count {
-      background: #0d6efd;
-      color: white;
-      padding: 5px 15px;
-      border-radius: 20px;
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    /* PRINT LAYOUT OPTIONS */
-    .layout-options {
-      display: flex;
-      gap: 10px;
-      margin: 15px 0;
-    }
-
-    .layout-option {
-      flex: 1;
-      text-align: center;
-      padding: 15px;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .layout-option:hover {
-      border-color: var(--primary-color);
-      background: rgba(16, 185, 129, 0.05);
-    }
-
-    .layout-option.active {
-      border-color: var(--primary-color);
-      background: rgba(16, 185, 129, 0.1);
-    }
-
     .btn-whatsapp {
       background-color: #25D366 !important;
       border-color: #25D366 !important;
       color: white !important;
-    }
-    
-    .btn-whatsapp:hover {
-      background-color: #1DA851 !important;
     }
 
     @media (max-width: 768px) {
@@ -558,24 +467,21 @@
     </div>
     
     <div class="header-controls">
-      <div class="system-title">
+      <div class="system-title d-none d-lg-flex">
         <i class="fas fa-qrcode"></i>
         <span>Student QR Dress System</span>
       </div>
       
       <div class="user-controls">
+        <button id="url-config-btn" class="btn btn-outline" title="Configure Web App URL" onclick="promptForWebAppUrl()">
+          <i class="fas fa-link"></i> Web App API
+        </button>
         <button id="sync-btn" class="btn btn-outline" title="Sync with Google Sheet" onclick="testSheetSync()">
           <i class="fas fa-database"></i> Sync Sheet
         </button>
         <button id="refresh-btn" class="btn btn-outline" title="Refresh Data" onclick="refreshAll()">
           <i class="fas fa-sync-alt"></i>
         </button>
-        <div class="user-menu">
-          <div class="user-avatar">
-            <i class="fas fa-user-circle"></i>
-          </div>
-          <div class="user-name">Admin</div>
-        </div>
       </div>
     </div>
   </header>
@@ -1474,6 +1380,110 @@
     let bulkEditDropdownData = null;
     let lastScannedStudentId = '';
 
+    // Hybrid Web App API URL setup (for GitHub Pages support)
+    let WEB_APP_URL = localStorage.getItem('APPS_SCRIPT_WEB_APP_URL') || '';
+
+    function setWebAppUrl(url) {
+      if (url) {
+        url = url.trim();
+        localStorage.setItem('APPS_SCRIPT_WEB_APP_URL', url);
+        WEB_APP_URL = url;
+      }
+    }
+
+    function promptForWebAppUrl() {
+      return Swal.fire({
+        title: 'Configure Web App API URL',
+        html: `
+          <p class="text-start">To connect this site on <strong>GitHub Pages</strong> to your Google Sheet, paste your deployed <strong>Google Apps Script Web App URL</strong> below:</p>
+          <input type="text" id="webAppUrlInput" class="form-control" placeholder="https://script.google.com/macros/s/.../exec" value="${WEB_APP_URL}">
+          <small class="text-muted mt-2 d-block text-start">
+            <strong>How to get this URL:</strong><br>
+            1. Open Google Sheet &gt; Extensions &gt; Apps Script<br>
+            2. Click <strong>Deploy &gt; New deployment</strong><br>
+            3. Select type: <strong>Web app</strong><br>
+            4. Execute as: <strong>Me</strong> | Who has access: <strong>Anyone</strong><br>
+            5. Copy the Web App URL and paste it above.
+          </small>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Save & Sync',
+        preConfirm: () => {
+          const val = document.getElementById('webAppUrlInput').value.trim();
+          if (!val || !val.startsWith('https://script.google.com/macros/s/')) {
+            Swal.showValidationMessage('Please enter a valid Google Apps Script Web App URL (starts with https://script.google.com/macros/s/)');
+            return false;
+          }
+          return val;
+        }
+      }).then(res => {
+        if (res.isConfirmed && res.value) {
+          setWebAppUrl(res.value);
+          Swal.fire({ icon: 'success', title: 'API URL Saved!', timer: 1200, showConfirmButton: false });
+          refreshAll();
+          return res.value;
+        }
+        return null;
+      });
+    }
+
+    /**
+     * Universal API caller: handles both Google Apps Script iframe AND GitHub Pages external fetch.
+     */
+    function callApi(funcName, payload = {}) {
+      return new Promise((resolve, reject) => {
+        // Mode A: Running directly inside Google Apps Script iframe
+        if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run[funcName] === 'function') {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)[funcName](payload);
+          return;
+        }
+
+        // Mode B: Running on GitHub Pages or custom host
+        if (!WEB_APP_URL) {
+          promptForWebAppUrl().then(url => {
+            if (url) {
+              callApi(funcName, payload).then(resolve).catch(reject);
+            } else {
+              reject(new Error("Google Apps Script Web App URL is required to sync data on GitHub Pages."));
+            }
+          });
+          return;
+        }
+
+        const fetchUrl = new URL(WEB_APP_URL);
+        fetchUrl.searchParams.append('action', funcName);
+
+        if (payload && typeof payload === 'object') {
+          Object.keys(payload).forEach(k => {
+            if (payload[k] !== undefined && payload[k] !== null) {
+              if (typeof payload[k] === 'object') {
+                fetchUrl.searchParams.append(k, JSON.stringify(payload[k]));
+              } else {
+                fetchUrl.searchParams.append(k, payload[k]);
+              }
+            }
+          });
+        }
+
+        fetch(fetchUrl.toString(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: funcName, ...(payload || {}) })
+        })
+        .then(res => res.json())
+        .then(resData => resolve(resData))
+        .catch(err => {
+          // Fallback to GET request if POST encounters browser CORS redirect limits
+          fetch(fetchUrl.toString())
+            .then(res => res.json())
+            .then(resData => resolve(resData))
+            .catch(fetchErr => reject(fetchErr));
+        });
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       preventFormSubmit();
       setupStudentRegistration();
@@ -1605,60 +1615,60 @@
     }
 
     function loadDropdowns() {
-      google.script.run.withSuccessHandler(classes => {
+      callApi('getClasses').then(classes => {
         const select = document.getElementById("newStudentClass");
-        if (select) {
+        if (select && Array.isArray(classes)) {
           select.innerHTML = '<option value="" disabled selected>Select Class</option>';
           classes.forEach(c => select.add(new Option(c, c)));
         }
-      }).getClasses();
+      }).catch(err => console.warn('Classes error:', err));
 
-      google.script.run.withSuccessHandler(events => {
+      callApi('getSongEvents').then(events => {
         const select = document.getElementById("newSongEvent");
-        if (select) {
+        if (select && Array.isArray(events)) {
           select.innerHTML = '<option value="" disabled selected>Select Song/Event</option>';
           events.forEach(e => select.add(new Option(e, e)));
         }
-      }).getSongEvents();
+      }).catch(err => console.warn('Events error:', err));
 
-      google.script.run.withSuccessHandler(codes => {
+      callApi('getDressCodes').then(codes => {
         const select = document.getElementById("newDressCode");
-        if (select) {
+        if (select && Array.isArray(codes)) {
           select.innerHTML = '<option value="" disabled selected>Select Dress Code</option>';
           codes.forEach(c => select.add(new Option(c, c)));
         }
-      }).getDressCodes();
+      }).catch(err => console.warn('Dress code error:', err));
     }
 
     function loadEditDropdowns() {
-      google.script.run.withSuccessHandler(classes => {
+      callApi('getClasses').then(classes => {
         const select = document.getElementById("editClass");
-        if (select) {
+        if (select && Array.isArray(classes)) {
           select.innerHTML = '<option value="">Select Class</option>';
           classes.forEach(c => select.add(new Option(c, c)));
         }
-      }).getClasses();
+      });
 
-      google.script.run.withSuccessHandler(events => {
+      callApi('getSongEvents').then(events => {
         const select = document.getElementById("editSongEvent");
-        if (select) {
+        if (select && Array.isArray(events)) {
           select.innerHTML = '<option value="">Select Song/Event</option>';
           events.forEach(e => select.add(new Option(e, e)));
         }
-      }).getSongEvents();
+      });
 
-      google.script.run.withSuccessHandler(codes => {
+      callApi('getDressCodes').then(codes => {
         const select = document.getElementById("editDressCode");
-        if (select) {
+        if (select && Array.isArray(codes)) {
           select.innerHTML = '<option value="">Select Dress Code</option>';
           codes.forEach(c => select.add(new Option(c, c)));
         }
-      }).getDressCodes();
+      });
     }
 
     // DASHBOARD & CHARTS
     function loadDashboard() {
-      google.script.run.withSuccessHandler(data => {
+      callApi('getDashboardData').then(data => {
         if (!data || !data.success) return;
         document.getElementById('statTotalStudents').textContent = data.totalStudents || 0;
         document.getElementById('statTotalRevenue').textContent = '₹' + (data.totalRevenue || 0).toLocaleString();
@@ -1666,7 +1676,7 @@
         document.getElementById('statLowStock').textContent = data.lowDressStudents || 0;
 
         renderCharts(data);
-      }).getDashboardData();
+      }).catch(err => console.warn('Dashboard load warning:', err));
     }
 
     function refreshDashboard() {
@@ -1680,7 +1690,6 @@
       if (dashboardCharts.topStudents) dashboardCharts.topStudents.destroy();
       if (dashboardCharts.salesTrend) dashboardCharts.salesTrend.destroy();
 
-      // Class Sales Chart
       const csCtx = document.getElementById('classSalesChart')?.getContext('2d');
       if (csCtx) {
         dashboardCharts.classSales = new Chart(csCtx, {
@@ -1697,7 +1706,6 @@
         });
       }
 
-      // Class Revenue Chart
       const crCtx = document.getElementById('classRevenueChart')?.getContext('2d');
       if (crCtx) {
         dashboardCharts.classRevenue = new Chart(crCtx, {
@@ -1713,7 +1721,6 @@
         });
       }
 
-      // Top Students Chart
       const tsCtx = document.getElementById('topStudentsChart')?.getContext('2d');
       if (tsCtx && data.topStudents) {
         dashboardCharts.topStudents = new Chart(tsCtx, {
@@ -1730,7 +1737,6 @@
         });
       }
 
-      // Sales Trend Chart
       const stCtx = document.getElementById('salesTrendChart')?.getContext('2d');
       if (stCtx && data.dailySales) {
         dashboardCharts.salesTrend = new Chart(stCtx, {
@@ -1773,8 +1779,8 @@
       if (spinner) spinner.style.display = 'block';
       if (form) form.style.display = 'none';
 
-      google.script.run
-        .withSuccessHandler(res => {
+      callApi('saveStudent', studentData)
+        .then(res => {
           if (spinner) spinner.style.display = 'none';
           if (res.success) {
             document.getElementById('generatedCode').textContent = res.studentId;
@@ -1802,12 +1808,11 @@
             Swal.fire({ icon: 'error', title: 'Registration Failed', text: res.error });
           }
         })
-        .withFailureHandler(err => {
+        .catch(err => {
           if (spinner) spinner.style.display = 'none';
           if (form) form.style.display = 'block';
           Swal.fire({ icon: 'error', title: 'Error', text: err.message });
-        })
-        .saveStudent(studentData);
+        });
     }
 
     function resetStudentForm() {
@@ -1822,7 +1827,7 @@
     function downloadGeneratedQR() {
       const studentId = document.getElementById('generatedCode')?.textContent;
       if (studentId) {
-        google.script.run.withSuccessHandler(res => {
+        callApi('getQRCodeForDownload', { studentId }).then(res => {
           if (res.success && res.downloadUrl) {
             const a = document.createElement('a');
             a.href = res.downloadUrl;
@@ -1831,7 +1836,7 @@
           } else if (res.qrUrl) {
             window.open(res.qrUrl, '_blank');
           }
-        }).getQRCodeForDownload(studentId);
+        });
       }
     }
 
@@ -1875,13 +1880,13 @@
     }
 
     function processScannedCode(studentId) {
-      google.script.run.withSuccessHandler(student => {
+      callApi('lookupStudent', { studentId, studentCode: studentId }).then(student => {
         if (student && student.studentId) {
           fillStudentForm(student);
         } else {
           Swal.fire({ icon: 'error', title: 'Student Not Found', text: `No student registered with ID: ${studentId}` });
         }
-      }).lookupStudent(studentId);
+      });
     }
 
     function fillStudentForm(student) {
@@ -1917,13 +1922,13 @@
     }
 
     function loadClassFees(className) {
-      google.script.run.withSuccessHandler(res => {
+      callApi('getClassFees', { className }).then(res => {
         if (res.success && Object.keys(res.fees).length > 0) {
           displayClassFees(className, res.fees);
         } else {
           hideFeeSection();
         }
-      }).getClassFees(className);
+      });
     }
 
     function displayClassFees(className, fees) {
@@ -1956,7 +1961,7 @@
     }
 
     function checkUnpaidFees(studentId) {
-      google.script.run.withSuccessHandler(res => {
+      callApi('getUnpaidFees', { studentId }).then(res => {
         const alertBox = document.getElementById('unpaidFeesAlert');
         if (res.success && res.hasUnpaidFees) {
           document.getElementById('unpaidFeesMessage').textContent = `Unpaid Fees: ₹${res.totalUnpaid}`;
@@ -1964,7 +1969,7 @@
         } else if (alertBox) {
           alertBox.style.display = 'none';
         }
-      }).getUnpaidFees(studentId);
+      });
     }
 
     function processDressSale() {
@@ -1995,13 +2000,9 @@
       document.querySelectorAll('.fee-checkbox:checked').forEach(cb => selectedFees.push(cb.value));
       formObject.feeCategories = JSON.stringify(selectedFees);
 
-      Swal.fire({
-        title: 'Processing Sale...',
-        didOpen: () => Swal.showLoading(),
-        allowOutsideClick: false
-      });
+      Swal.fire({ title: 'Processing Sale...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
 
-      google.script.run.withSuccessHandler(res => {
+      callApi('processDressSale', formObject).then(res => {
         Swal.close();
         if (res.success) {
           lastReceiptData = res.saleData;
@@ -2020,7 +2021,7 @@
         } else {
           Swal.fire({ icon: 'error', title: 'Sale Failed', text: res.error });
         }
-      }).processDressSale(formObject);
+      });
     }
 
     function showReceiptPreview() {
@@ -2051,14 +2052,15 @@
         Swal.fire({ icon: 'warning', title: 'No Phone Number', text: 'No phone number associated with this student.' });
         return;
       }
-      google.script.run.withSuccessHandler(res => {
+      callApi('getWhatsAppLink', { phoneNo: lastReceiptData.phoneNo, receiptData: lastReceiptData }).then(res => {
         if (res.success) window.open(res.whatsappLink, '_blank');
-      }).getWhatsAppLink(lastReceiptData.phoneNo, lastReceiptData);
+      });
     }
 
     // MANAGE STUDENTS TABLE
     function loadStudents() {
-      google.script.run.withSuccessHandler(students => {
+      callApi('getAllStudents').then(students => {
+        if (!Array.isArray(students)) return;
         allStudentsData = students;
         if ($.fn.DataTable.isDataTable('#studentsTable')) {
           $('#studentsTable').DataTable().destroy();
@@ -2085,16 +2087,16 @@
           tbody.appendChild(tr);
         });
         $('#studentsTable').DataTable();
-      }).getAllStudents();
+      });
     }
 
     function recountDress() {
       Swal.fire({ title: 'Recounting...', didOpen: () => Swal.showLoading() });
-      google.script.run.withSuccessHandler(res => {
+      callApi('recalculateDress').then(res => {
         Swal.fire({ icon: 'success', title: 'Stock Recounted', text: res.message });
         loadStudents();
         loadDashboard();
-      }).recalculateDress();
+      });
     }
 
     function editStudent(studentId) {
@@ -2132,7 +2134,7 @@
         dressCode: document.getElementById('editDressCode').value
       };
 
-      google.script.run.withSuccessHandler(res => {
+      callApi('updateStudent', data).then(res => {
         if (res.success) {
           bootstrap.Modal.getInstance(document.getElementById('editStudentModal')).hide();
           Swal.fire({ icon: 'success', title: 'Student Updated', timer: 1000, showConfirmButton: false });
@@ -2141,7 +2143,7 @@
         } else {
           Swal.fire({ icon: 'error', title: 'Error', text: res.error });
         }
-      }).updateStudent(data);
+      });
     }
 
     function deleteStudent(studentId) {
@@ -2153,35 +2155,35 @@
         confirmButtonColor: '#ef4444'
       }).then(res => {
         if (res.isConfirmed) {
-          google.script.run.withSuccessHandler(r => {
+          callApi('deleteStudent', { studentId, id: studentId }).then(r => {
             if (r.success) {
               Swal.fire({ icon: 'success', title: 'Deleted', timer: 1000, showConfirmButton: false });
               loadStudents();
               loadDashboard();
             }
-          }).deleteStudent(studentId);
+          });
         }
       });
     }
 
     // QR CODE MANAGEMENT
     function checkQRCodeStatus() {
-      google.script.run.withSuccessHandler(res => {
-        if (res.success) {
+      callApi('checkQRCodeStatus').then(res => {
+        if (res && res.success) {
           document.getElementById('qrStatusAlert').className = 'alert alert-info';
           document.getElementById('qrStatusAlert').innerHTML = `
             <strong>QR Code Status:</strong> ${res.studentsWithQR} of ${res.totalStudents} students have QR codes (${res.percentageComplete}% complete).
           `;
         }
-      }).checkQRCodeStatus();
+      });
     }
 
     function generateMissingQRCodes() {
       Swal.fire({ title: 'Generating Missing QR Codes...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
-      google.script.run.withSuccessHandler(res => {
+      callApi('generateMissingQRCodes').then(res => {
         Swal.fire({ icon: 'success', title: 'Done!', text: res.message });
         checkQRCodeStatus();
-      }).generateMissingQRCodes();
+      });
     }
 
     function regenerateAllQRCodes() {
@@ -2189,7 +2191,8 @@
     }
 
     function viewQRCodeGallery() {
-      google.script.run.withSuccessHandler(students => {
+      callApi('getAllStudents').then(students => {
+        if (!Array.isArray(students)) return;
         const container = document.getElementById('qrGalleryContent');
         container.innerHTML = '';
         students.forEach(s => {
@@ -2206,23 +2209,24 @@
           container.appendChild(col);
         });
         new bootstrap.Modal(document.getElementById('qrGalleryModal')).show();
-      }).getAllStudents();
+      });
     }
 
     function downloadGalleryQR(studentId) {
-      google.script.run.withSuccessHandler(res => {
+      callApi('getQRCodeForDownload', { studentId }).then(res => {
         if (res.success && res.downloadUrl) {
           const a = document.createElement('a');
           a.href = res.downloadUrl;
           a.download = res.filename;
           a.click();
         }
-      }).getQRCodeForDownload(studentId);
+      });
     }
 
     // STUDENT LIST & BULK EDIT
     function loadStudentList() {
-      google.script.run.withSuccessHandler(students => {
+      callApi('getAllStudents').then(students => {
+        if (!Array.isArray(students)) return;
         allStudentsData = students;
         const filterSelect = document.getElementById('filterClass');
         if (filterSelect) {
@@ -2234,7 +2238,7 @@
         }
 
         renderStudentListTable(students);
-      }).getAllStudents();
+      });
     }
 
     function renderStudentListTable(students) {
@@ -2334,7 +2338,7 @@
 
     function openBulkEdit() {
       if (selectedStudents.size === 0) return;
-      google.script.run.withSuccessHandler(data => {
+      callApi('getDropdownDataForBulkEdit').then(data => {
         bulkEditDropdownData = data;
         const seSelect = document.getElementById('bulkSongEvent');
         const dcSelect = document.getElementById('bulkDressCode');
@@ -2342,30 +2346,32 @@
         seSelect.innerHTML = '<option value="">-- Keep Current --</option>';
         dcSelect.innerHTML = '<option value="">-- Keep Current --</option>';
 
-        data.songEvents.forEach(e => seSelect.add(new Option(e, e)));
-        data.dressCodes.forEach(c => dcSelect.add(new Option(c, c)));
+        if (Array.isArray(data.songEvents)) data.songEvents.forEach(e => seSelect.add(new Option(e, e)));
+        if (Array.isArray(data.dressCodes)) data.dressCodes.forEach(c => dcSelect.add(new Option(c, c)));
 
         const listContainer = document.getElementById('selectedStudentsList');
         listContainer.innerHTML = Array.from(selectedStudents).join(', ');
 
         new bootstrap.Modal(document.getElementById('bulkEditModal')).show();
-      }).getDropdownDataForBulkEdit();
+      });
     }
 
     function showCommonPrices() {
       if (!bulkEditDropdownData) return;
       const list = document.getElementById('commonPricesList');
       list.innerHTML = '';
-      bulkEditDropdownData.existingPrices.forEach(p => {
-        const item = document.createElement('a');
-        item.className = 'list-group-item list-group-item-action';
-        item.textContent = `₹${p}`;
-        item.onclick = () => {
-          document.getElementById('bulkPrice').value = p;
-          bootstrap.Modal.getInstance(document.getElementById('commonPricesModal')).hide();
-        };
-        list.appendChild(item);
-      });
+      if (Array.isArray(bulkEditDropdownData.existingPrices)) {
+        bulkEditDropdownData.existingPrices.forEach(p => {
+          const item = document.createElement('a');
+          item.className = 'list-group-item list-group-item-action';
+          item.textContent = `₹${p}`;
+          item.onclick = () => {
+            document.getElementById('bulkPrice').value = p;
+            bootstrap.Modal.getInstance(document.getElementById('commonPricesModal')).hide();
+          };
+          list.appendChild(item);
+        });
+      }
       new bootstrap.Modal(document.getElementById('commonPricesModal')).show();
     }
 
@@ -2385,12 +2391,12 @@
       });
 
       Swal.fire({ title: 'Applying Bulk Edit...', didOpen: () => Swal.showLoading() });
-      google.script.run.withSuccessHandler(res => {
+      callApi('bulkUpdateStudents', { studentUpdates: updates }).then(res => {
         bootstrap.Modal.getInstance(document.getElementById('bulkEditModal')).hide();
         Swal.fire({ icon: 'success', title: 'Bulk Edit Applied', text: res.message });
         clearSelections();
         loadStudentList();
-      }).bulkUpdateStudents(updates);
+      });
     }
 
     function sendBulkWhatsApp() {
@@ -2399,7 +2405,8 @@
 
     // PRINT LABELS TAB
     function loadPrintTab() {
-      google.script.run.withSuccessHandler(students => {
+      callApi('getAllStudents').then(students => {
+        if (!Array.isArray(students)) return;
         allStudentsData = students;
         const tbody = document.getElementById('selectedPrintList');
         tbody.innerHTML = '';
@@ -2416,7 +2423,7 @@
           tbody.appendChild(tr);
         });
         updatePrintBatchCount();
-      }).getAllStudents();
+      });
     }
 
     function togglePrintSelect(id, cb) {
@@ -2550,7 +2557,7 @@
 
     function viewFeeHistory() {
       if (!lastScannedStudentId) return;
-      google.script.run.withSuccessHandler(res => {
+      callApi('getStudentFeeHistory', { studentId: lastScannedStudentId }).then(res => {
         if (res.success) {
           let html = '<ul class="list-group text-start">';
           res.transactions.forEach(t => {
@@ -2559,17 +2566,18 @@
           html += '</ul>';
           Swal.fire({ title: 'Fee History', html: html });
         }
-      }).getStudentFeeHistory(lastScannedStudentId);
+      });
     }
 
     // FEE MANAGEMENT MODAL
     function manageClassFees() {
-      google.script.run.withSuccessHandler(classes => {
+      callApi('getClasses').then(classes => {
+        if (!Array.isArray(classes)) return;
         const select = document.getElementById('feeClassSelect');
         select.innerHTML = '<option value="">Select Class</option>';
         classes.forEach(c => select.add(new Option(c, c)));
         new bootstrap.Modal(document.getElementById('feeManagementModal')).show();
-      }).getClasses();
+      });
     }
 
     function loadClassFeesForManagement() {
@@ -2577,13 +2585,13 @@
       if (!cls) return;
       document.getElementById('selectedClassForFees').textContent = cls;
       
-      google.script.run.withSuccessHandler(res => {
+      callApi('getClassFees', { className: cls }).then(res => {
         const container = document.getElementById('feeInputs');
         container.innerHTML = '';
         const feeTypes = ['Admission Fees', 'Annual Day Fees', 'Sports Fees', 'Exam Fees', 'Library Fees', 'Medical Fees', 'Tour Fees', 'Lab Fees', 'Penalty Fees', 'Other Fees'];
         
         feeTypes.forEach(ft => {
-          const val = res.fees[ft] || 0;
+          const val = res.fees ? (res.fees[ft] || 0) : 0;
           const col = document.createElement('div');
           col.className = 'col-md-6 mb-2';
           col.innerHTML = `
@@ -2595,18 +2603,18 @@
 
         document.getElementById('feeManagementSection').style.display = 'block';
         document.getElementById('saveFeesBtn').disabled = false;
-      }).getClassFees(cls);
+      });
     }
 
     function addNewFeeType() {
       const feeName = document.getElementById('newFeeTypeInput')?.value?.trim();
       if (!feeName) return;
-      google.script.run.withSuccessHandler(res => {
+      callApi('addNewFeeType', { feeName }).then(res => {
         if (res.success) {
           Swal.fire({ icon: 'success', title: 'Fee Type Added', timer: 1000, showConfirmButton: false });
           loadClassFeesForManagement();
         }
-      }).addNewFeeType(feeName);
+      });
     }
 
     function saveClassFees() {
@@ -2618,16 +2626,16 @@
         if (val > 0) fees[name] = val;
       });
 
-      google.script.run.withSuccessHandler(res => {
+      callApi('saveClassFees', { classFees: { className: className, fees: fees } }).then(res => {
         if (res.success) {
           bootstrap.Modal.getInstance(document.getElementById('feeManagementModal')).hide();
           Swal.fire({ icon: 'success', title: 'Class Fees Saved', timer: 1000, showConfirmButton: false });
         }
-      }).saveClassFees({ className: className, fees: fees });
+      });
     }
 
     function initializeFees() {
-      google.script.run.initializeFeesInDropdown();
+      callApi('initializeFeesInDropdown').catch(err => console.warn('Fees init warning:', err));
     }
 
     function testSheetSync() {
@@ -2638,14 +2646,14 @@
         allowOutsideClick: false
       });
 
-      google.script.run.withSuccessHandler(res => {
-        if (res.hasStudentSheet || res.hasDataSheet) {
+      callApi('testSheets').then(res => {
+        if (res && (res.hasStudentSheet || res.hasDataSheet)) {
           Swal.fire({
             icon: 'success',
             title: 'Google Sheet Connected!',
             html: `
               <p>Connected to Spreadsheet: <code>${res.spreadsheetId}</code></p>
-              <p>Found tabs: <strong>${res.sheets.join(', ')}</strong></p>
+              <p>Found tabs: <strong>${res.sheets ? res.sheets.join(', ') : 'OK'}</strong></p>
             `
           });
           refreshAll();
@@ -2654,7 +2662,7 @@
             icon: 'warning',
             title: 'Sheet Tabs Missing',
             html: `
-              <p>Connected to Spreadsheet <code>${res.spreadsheetId}</code>, but default sheets (Data, Students, DROPDOWN) were not found.</p>
+              <p>Connected to Spreadsheet <code>${res?.spreadsheetId || 'Target'}</code>, but default sheets (Data, Students, DROPDOWN) were not found.</p>
               <p>Click below to initialize required sheets automatically.</p>
             `,
             showCancelButton: true,
@@ -2662,24 +2670,24 @@
             cancelButtonText: 'Cancel'
           }).then(choice => {
             if (choice.isConfirmed) {
-              google.script.run.withSuccessHandler(initRes => {
+              callApi('initializeSheets').then(initRes => {
                 Swal.fire({ icon: 'success', title: 'Sheets Initialized!', text: initRes.message });
                 refreshAll();
-              }).initializeSheets();
+              });
             }
           });
         }
-      }).withFailureHandler(err => {
+      }).catch(err => {
         Swal.fire({
           icon: 'error',
           title: 'Connection Error',
           html: `
             <p>Could not access Google Sheet ID <code>1uhK7jOTvlKGTC-7FVQxJa3g10I9nnNce2icXcE4ccVQ</code>.</p>
             <p><strong>Error details:</strong> ${err.message}</p>
-            <p><small>Ensure your Web App deployment script has access permissions to open this spreadsheet.</small></p>
+            <p><small>Click <strong>Web App API</strong> in the top header bar to ensure your Web App URL is configured.</small></p>
           `
         });
-      }).testSheets();
+      });
     }
   </script>
 </body>
