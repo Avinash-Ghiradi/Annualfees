@@ -1,0 +1,2631 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Student QR Code & Dress Management System</title>
+  
+  <!-- CSS Dependencies -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #10b981;
+      --primary-dark: #059669;
+      --warning-color: #f59e0b;
+      --danger-color: #ef4444;
+      --info-color: #06b6d4;
+      --light-bg: #f3f4f6;
+    }
+
+    body {
+      background-color: var(--light-bg);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding-top: 70px;
+      overflow-x: hidden;
+    }
+
+    /* HEADER STYLES */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      z-index: 1000;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .logo {
+      height: 50px;
+      width: 50px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: white;
+      padding: 2px;
+    }
+
+    .school-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .school-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .school-tagline {
+      font-size: 0.85rem;
+      opacity: 0.9;
+      font-weight: 300;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .system-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      background: rgba(255,255,255,0.1);
+      padding: 8px 15px;
+      border-radius: 8px;
+      backdrop-filter: blur(5px);
+    }
+
+    .user-controls {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    #refresh-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      border-radius: 8px;
+      padding: 8px 12px;
+      transition: all 0.3s;
+    }
+
+    #refresh-btn:hover {
+      background: rgba(255,255,255,0.2);
+      transform: rotate(45deg);
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .user-menu:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .user-avatar {
+      font-size: 1.5rem;
+    }
+
+    .user-name {
+      font-weight: 500;
+    }
+
+    /* MAIN CONTENT */
+    .container {
+      border-radius: 12px;
+      padding: 25px;
+      margin-top: 10px;
+      margin-bottom: 100px;
+      background: white;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    /* DASHBOARD CARDS */
+    .dashboard-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+      height: 100%;
+      border: 1px solid #e5e7eb;
+    }
+
+    .dashboard-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+
+    /* STAT CARDS */
+    .stat-card {
+      color: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: none;
+      transition: all 0.3s;
+    }
+
+    .stat-card:hover {
+      transform: scale(1.02);
+    }
+
+    .stat-card.success {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    }
+
+    .stat-card.warning {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .stat-card.info {
+      background: linear-gradient(135deg, var(--info-color) 0%, #0891b2 100%);
+    }
+
+    .stat-card.danger {
+      background: linear-gradient(135deg, var(--danger-color) 0%, #dc2626 100%);
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      margin: 10px 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.95;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-weight: 600;
+    }
+
+    /* CHART CONTAINERS */
+    .chart-container {
+      position: relative;
+      margin: 15px 0;
+      min-height: 350px;
+    }
+
+    /* NAV TABS */
+    .nav-tabs {
+      border-bottom: 2px solid #e5e7eb;
+      margin-bottom: 25px;
+    }
+
+    .nav-tabs .nav-link {
+      border-radius: 8px 8px 0 0;
+      font-weight: 600;
+      color: #6b7280;
+      padding: 12px 20px;
+      border: none;
+      margin: 0 5px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-tabs .nav-link:hover {
+      background-color: #f1f5f9;
+      color: var(--primary-color);
+    }
+
+    .nav-tabs .nav-link.active {
+      background-color: var(--primary-color);
+      color: white !important;
+      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      opacity: 0.9;
+    }
+
+    /* FORM STYLES */
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.2);
+      outline: none;
+    }
+
+    .input-group-text {
+      background-color: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+      font-weight: 500;
+    }
+
+    /* BUTTONS */
+    .btn {
+      border-radius: 8px;
+      font-weight: 600;
+      padding: 12px 24px;
+      transition: all 0.3s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+      border: none;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, #047857 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, #047857 100%);
+      border: none;
+    }
+
+    .btn-success:hover {
+      background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+    }
+
+    /* QR SCANNER */
+    #qr-reader {
+      width: 100%;
+      box-sizing: border-box;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #e5e7eb;
+    }
+
+    /* MODAL STYLES */
+    .modal-header {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+      color: white;
+      border-radius: 12px 12px 0 0;
+      padding: 20px;
+    }
+
+    .modal-title {
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    /* THERMAL RECEIPT STYLES */
+    .thermal-receipt {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      width: 80mm;
+      margin: 0 auto;
+      padding: 10px;
+      background: white;
+      border: 1px solid #ddd;
+    }
+
+    .receipt-header {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 10px;
+      border-bottom: 1px dashed #000;
+      padding-bottom: 5px;
+    }
+
+    .receipt-item {
+      display: flex;
+      justify-content: space-between;
+      margin: 3px 0;
+    }
+
+    .receipt-total {
+      border-top: 1px dashed #000;
+      margin-top: 10px;
+      padding-top: 10px;
+      font-weight: bold;
+    }
+
+    .receipt-footer {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 9px;
+      color: #666;
+    }
+
+    /* LABEL PRINTING STYLES */
+    .label-container {
+      display: flex;
+      width: 100%;
+      min-height: 200px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      page-break-inside: avoid;
+    }
+
+    .label-container.stacked {
+      flex-direction: column;
+    }
+
+    .label-left {
+      flex: 2;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-right: 2px dashed #10b981;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+
+    .label-container.stacked .label-left {
+      border-right: none;
+      border-bottom: 2px dashed #10b981;
+    }
+
+    .label-right {
+      flex: 1;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #f1f5f9;
+    }
+
+    .school-header-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: #059669;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+
+    .qr-container {
+      width: 110px;
+      height: 110px;
+      background: white;
+      padding: 6px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-container img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .print-label-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 15px;
+      margin: 15px 0;
+    }
+
+    /* WHATSAPP FLOATING BUTTON */
+    .whatsapp-float {
+      position: fixed;
+      width: 60px;
+      height: 60px;
+      bottom: 30px;
+      right: 30px;
+      background: linear-gradient(135deg, #25d366 0%, #20ba5a 100%);
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      font-size: 30px;
+      box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+    }
+
+    .whatsapp-float:hover {
+      background: linear-gradient(135deg, #20ba5a 0%, #1a9c4a 100%);
+      transform: scale(1.1);
+      color: white;
+    }
+
+    /* LOADING OVERLAY */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    /* SELECT ALL CONTROLS */
+    .select-controls {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .selected-count {
+      background: #0d6efd;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    /* PRINT LAYOUT OPTIONS */
+    .layout-options {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .layout-option {
+      flex: 1;
+      text-align: center;
+      padding: 15px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .layout-option:hover {
+      border-color: var(--primary-color);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .layout-option.active {
+      border-color: var(--primary-color);
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    .btn-whatsapp {
+      background-color: #25D366 !important;
+      border-color: #25D366 !important;
+      color: white !important;
+    }
+    
+    .btn-whatsapp:hover {
+      background-color: #1DA851 !important;
+    }
+
+    @media (max-width: 768px) {
+      body { padding-top: 60px; }
+      .header { padding: 10px 15px; }
+      .brand { min-width: auto; }
+      .school-name { font-size: 1rem; }
+      .container { padding: 15px; margin: 5px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="brand">
+      <img id="school-logo" class="logo" src="https://lh3.googleusercontent.com/d/1AviNbKi5ho_GHCTkA1ugcCu49l2cE62F" alt="Logo" onerror="handleLogoError()">
+      <div class="logo-fallback" style="display: none;">
+        <i class="fas fa-graduation-cap"></i>
+      </div>
+      <div class="school-info">
+        <div class="school-name">SUCCESS SCHOOL INDI</div>
+        <div class="school-tagline">Student Dress & Fee Management System</div>
+      </div>
+    </div>
+    
+    <div class="header-controls">
+      <div class="system-title">
+        <i class="fas fa-qrcode"></i>
+        <span>Student QR Dress System</span>
+      </div>
+      
+      <div class="user-controls">
+        <button id="refresh-btn" class="btn btn-outline" title="Refresh Data" onclick="refreshAll()">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+        <div class="user-menu">
+          <div class="user-avatar">
+            <i class="fas fa-user-circle"></i>
+          </div>
+          <div class="user-name">Admin</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- WhatsApp Floating Button -->
+  <a href="https://wa.me/9964882070?text=Hi%2C%20I%20want%20to%20update%20this%20inventory%20code%20and%20add%20more%20features." target="_blank" class="whatsapp-float" title="Contact Support">
+    <i class="bi bi-whatsapp"></i>
+  </a>
+
+  <!-- Main Container -->
+  <div class="container">
+    <!-- Mobile Navigation Dropdown -->
+    <div class="d-block d-md-none mb-3">
+      <div class="card mb-2">
+        <div class="card-body py-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0" id="currentTabTitle">
+              <i class="bi bi-speedometer2 text-success"></i> Dashboard
+            </h6>
+            <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#mobileTabMenu">
+              <i class="bi bi-list"></i> Menu
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="collapse" id="mobileTabMenu">
+        <div class="list-group">
+          <a href="#" class="list-group-item list-group-item-action active" onclick="switchMobileTab('dashboard')">
+            <i class="bi bi-speedometer2"></i> Dashboard
+          </a>
+          <a href="#" class="list-group-item list-group-item-action" onclick="switchMobileTab('scan')">
+            <i class="bi bi-qr-code-scan"></i> Scan & Issue Dress
+          </a>
+          <a href="#" class="list-group-item list-group-item-action" onclick="switchMobileTab('register')">
+            <i class="bi bi-plus-circle"></i> Register Student
+          </a>
+          <a href="#" class="list-group-item list-group-item-action" onclick="switchMobileTab('manage')">
+            <i class="bi bi-gear-fill"></i> Manage Students
+          </a>
+          <a href="#" class="list-group-item list-group-item-action" onclick="switchMobileTab('qrcode')">
+            <i class="bi bi-qr-code"></i> QR Codes
+          </a>
+          <a href="#" class="list-group-item list-group-item-action" onclick="switchMobileTab('studentlist')">
+            <i class="bi bi-table"></i> Student List
+          </a>
+          <a href="#" class="list-group-item list-group-item-action" onclick="switchMobileTab('print')">
+            <i class="bi bi-printer"></i> Print Labels
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop Navigation Tabs -->
+    <ul class="nav nav-tabs d-none d-md-flex" id="desktopTabs" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard-pane" type="button">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="scan-tab" data-bs-toggle="tab" data-bs-target="#scan-pane" type="button">
+          <i class="bi bi-qr-code-scan"></i> Scan & Issue Dress
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-pane" type="button">
+          <i class="bi bi-plus-circle"></i> Register Student
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="manage-tab" data-bs-toggle="tab" data-bs-target="#manage-pane" type="button">
+          <i class="bi bi-gear-fill"></i> Manage Students
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="qrcode-tab" data-bs-toggle="tab" data-bs-target="#qrcode-pane" type="button">
+          <i class="bi bi-qr-code"></i> QR Codes
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="studentlist-tab" data-bs-toggle="tab" data-bs-target="#studentlist-pane" type="button">
+          <i class="bi bi-table"></i> Student List
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="print-tab" data-bs-toggle="tab" data-bs-target="#print-pane" type="button">
+          <i class="bi bi-printer"></i> Print Labels
+        </button>
+      </li>
+    </ul>
+
+    <!-- Tab Content Panes -->
+    <div class="tab-content" id="myTabContent">
+      <!-- DASHBOARD TAB -->
+      <div class="tab-pane fade show active" id="dashboard-pane">
+        <div class="mt-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4><i class="bi bi-speedometer2 text-success"></i> Dashboard Overview</h4>
+            <button class="btn btn-success" onclick="refreshDashboard()" id="refreshDashboardBtn">
+              <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+          </div>
+          <div class="row g-3 mb-4">
+            <div class="col-lg-3 col-md-6 col-sm-6">
+              <div class="stat-card info">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="stat-label">Total Students</div>
+                    <div class="stat-value" id="statTotalStudents">0</div>
+                  </div>
+                  <i class="bi bi-people card-icon"></i>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-6">
+              <div class="stat-card success">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="stat-label">Total Revenue</div>
+                    <div class="stat-value" id="statTotalRevenue">₹0</div>
+                  </div>
+                  <i class="bi bi-currency-rupee card-icon"></i>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-6">
+              <div class="stat-card warning">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="stat-label">Dress Sold</div>
+                    <div class="stat-value" id="statTotalSales">0</div>
+                  </div>
+                  <i class="bi bi-box-seam card-icon"></i>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-6">
+              <div class="stat-card danger">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="stat-label">Low Dress Students</div>
+                    <div class="stat-value" id="statLowStock">0</div>
+                  </div>
+                  <i class="bi bi-exclamation-triangle card-icon"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row g-4 mb-4">
+            <div class="col-lg-6 col-md-6">
+              <div class="dashboard-card">
+                <h5 class="mb-3"><i class="bi bi-pie-chart-fill text-success"></i> Sales by Class</h5>
+                <div class="chart-container">
+                  <canvas id="classSalesChart"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6 col-md-6">
+              <div class="dashboard-card">
+                <h5 class="mb-3"><i class="bi bi-currency-exchange text-success"></i> Revenue Distribution</h5>
+                <div class="chart-container">
+                  <canvas id="classRevenueChart"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6 col-md-6">
+              <div class="dashboard-card">
+                <h5 class="mb-3"><i class="bi bi-bar-chart-fill text-success"></i> Top Performing Students</h5>
+                <div class="chart-container">
+                  <canvas id="topStudentsChart"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6 col-md-6">
+              <div class="dashboard-card">
+                <h5 class="mb-3"><i class="bi bi-graph-up text-success"></i> Sales Trend</h5>
+                <div class="chart-container">
+                  <canvas id="salesTrendChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCAN & ISSUE DRESS TAB -->
+      <div class="tab-pane fade" id="scan-pane">
+        <div class="mt-4">
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="dashboard-card mb-3">
+                <h5 class="mb-3"><i class="bi bi-camera-video text-primary"></i> QR Code Scanner</h5>
+                <div id="qr-reader"></div>
+                <div id="qr-reader-results"></div>
+                <div class="mt-3">
+                  <div class="input-group">
+                    <input type="text" class="form-control" id="manualStudentCode" placeholder="Or enter Student ID manually">
+                    <button class="btn btn-primary" onclick="lookupManualCode()">
+                      <i class="bi bi-search"></i> Lookup
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="dashboard-card">
+                <h5 class="mb-3"><i class="bi bi-box-seam text-success"></i> Issue Dress & Collect Fees</h5>
+                <form id="InventoryForm">
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                    <input type="text" class="form-control" id="studentCode" name="studentCode" placeholder="Scan Student QR Code" readonly>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    <input type="text" class="form-control" id="studentName" name="student_name" placeholder="Student Name" readonly>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-mortarboard"></i></span>
+                    <input type="text" class="form-control" id="className" name="class_name" placeholder="Class" readonly>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-music-note"></i></span>
+                    <input type="text" class="form-control" id="songEvent" name="song_event" placeholder="Song/Event Name" readonly>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-currency-rupee"></i></span>
+                    <input type="text" class="form-control" id="price" name="price" placeholder="Dress Price" readonly>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                    <input type="text" class="form-control" id="phoneNo" name="phone_no" placeholder="Phone Number" readonly>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-person-heart"></i></span>
+                    <input type="text" class="form-control" id="dressCode" name="dress_code" placeholder="Dress Code" readonly>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-box-seam"></i></span>
+                    <input type="text" class="form-control" id="currentDress" placeholder="Available Stock" readonly>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-cart-dash"></i></span>
+                    <input type="number" class="form-control" id="quantity" name="quantity" placeholder="Enter quantity" min="1">
+                  </div>
+                  
+                  <!-- Fee Section -->
+                  <div class="card mt-3">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                      <span><i class="bi bi-cash-coin"></i> Additional Fees</span>
+                      <button type="button" class="btn btn-sm btn-light" onclick="manageClassFees()">
+                        <i class="bi bi-gear"></i> Manage Fees
+                      </button>
+                    </div>
+                    <div class="card-body" id="feeSection" style="display: none;">
+                      <p class="mb-2"><strong>Available Fees for Class: <span id="currentClassName">-</span></strong></p>
+                      <div id="feeCheckboxes" class="mb-3"></div>
+                      <div class="alert alert-info">
+                        <div class="d-flex justify-content-between">
+                          <span>Dress Total:</span>
+                          <span>₹<span id="dressTotalAmount">0.00</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                          <span>Selected Fees:</span>
+                          <span>₹<span id="selectedFeesTotal">0.00</span></span>
+                        </div>
+                        <hr class="my-1">
+                        <div class="d-flex justify-content-between fw-bold">
+                          <span>Grand Total:</span>
+                          <span>₹<span id="grandTotalAmount">0.00</span></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="alert alert-success mt-3 mb-3" id="totalAmountDisplay" style="display:none;">
+                    <h4 class="mb-0">Total Amount: ₹<span id="totalAmount">0.00</span></h4>
+                  </div>
+
+                  <button type="button" class="btn btn-danger mb-3 w-100 mt-3" onclick="processDressSale()" id="issueDressBtn">
+                    <i class="bi bi-box-seam"></i> Issue Dress & Save Sale
+                  </button>
+
+                  <hr class="my-3">
+                  <div class="card">
+                    <div class="card-header bg-warning text-white">
+                      <i class="bi bi-cash-coin"></i> Additional Payments (Fees Only)
+                    </div>
+                    <div class="card-body">
+                      <div class="alert alert-info" id="unpaidFeesAlert" style="display: none;">
+                        <i class="bi bi-exclamation-circle"></i> <span id="unpaidFeesMessage"></span>
+                      </div>
+                      <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-warning flex-grow-1" onclick="showAdditionalPayment()" id="additionalPaymentBtn" disabled>
+                          <i class="bi bi-cash-stack"></i> Pay Additional Fees
+                        </button>
+                        <button type="button" class="btn btn-info" onclick="viewFeeHistory()" id="viewFeeHistoryBtn" disabled>
+                          <i class="bi bi-clock-history"></i> Fee History
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REGISTER STUDENT TAB -->
+      <div class="tab-pane fade" id="register-pane">
+        <div class="mt-4">
+          <div class="row justify-content-center">
+            <div class="col-lg-8">
+              <div class="dashboard-card">
+                <h5 class="mb-4"><i class="bi bi-plus-circle-fill text-success"></i> Register New Student</h5>
+                <form id="StudentRegisterForm">
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                    <input type="text" class="form-control" id="newStudentID" placeholder="Student ID (e.g. STU1001)" required>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-mortarboard"></i></span>
+                    <select class="form-select" id="newStudentClass" required>
+                      <option value="" disabled selected>Select Class</option>
+                    </select>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    <input type="text" class="form-control" id="newStudentName" placeholder="Full Student Name" required>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-music-note"></i></span>
+                    <select class="form-select" id="newSongEvent" required>
+                      <option value="" disabled selected>Select Song/Event</option>
+                    </select>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-currency-rupee"></i></span>
+                    <input type="number" step="0.01" min="0" class="form-control" id="newDressPrice" placeholder="Dress Price (₹)" required>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-123"></i></span>
+                    <input type="number" min="0" class="form-control" id="newTotalDress" placeholder="Total Dress Allocated" required>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                    <input type="tel" class="form-control" id="newPhoneNo" placeholder="10-digit Phone Number" pattern="[0-9]{10}" required>
+                  </div>
+                  <div class="mb-3 input-group">
+                    <span class="input-group-text"><i class="bi bi-person-heart"></i></span>
+                    <select class="form-select" id="newDressCode" required>
+                      <option value="" disabled selected>Select Dress Code</option>
+                    </select>
+                  </div>
+                  <button type="submit" class="btn btn-success mb-3 w-100">
+                    <i class="bi bi-qr-code"></i> Register Student & Generate QR
+                  </button>
+                </form>
+                
+                <div id="loadingSpinner" class="text-center mt-3" style="display:none;">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p class="mt-2">Generating QR Code and saving...</p>
+                </div>
+                
+                <div id="qrCodeDisplay" class="text-center mt-3" style="display:none;">
+                  <div class="alert alert-success">
+                    <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                    <h5 class="mt-2">Student Registered Successfully!</h5>
+                  </div>
+                  <div id="qrCodeContainer" class="d-flex justify-content-center mb-3"></div>
+                  <div class="student-info text-start mb-3 p-3 bg-light rounded">
+                    <p><strong>Student ID:</strong> <span id="generatedCode"></span></p>
+                    <p><strong>Class:</strong> <span id="generatedClass"></span></p>
+                    <p><strong>Name:</strong> <span id="generatedName"></span></p>
+                    <p><strong>Phone:</strong> <span id="generatedPhone"></span></p>
+                    <p><strong>Dress Code:</strong> <span id="generatedDress"></span></p>
+                  </div>
+                  <button class="btn btn-primary me-2" onclick="downloadGeneratedQR()">
+                    <i class="bi bi-download"></i> Download QR Code
+                  </button>
+                  <button class="btn btn-secondary" onclick="resetStudentForm()">
+                    <i class="bi bi-arrow-repeat"></i> Register Another
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MANAGE STUDENTS TAB -->
+      <div class="tab-pane fade" id="manage-pane">
+        <div class="mt-4">
+          <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4><i class="bi bi-gear-fill text-primary"></i> Manage Students</h4>
+              <button class="btn btn-success" onclick="recountDress()">
+                <i class="bi bi-arrow-repeat"></i> Recount Dress Stock
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table id="studentsTable" class="table table-striped table-bordered" style="width:100%">
+                <thead>
+                  <tr>
+                    <th>Student ID</th>
+                    <th>Class</th>
+                    <th>Name</th>
+                    <th>Song/Event</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                    <th>Remaining</th>
+                    <th>Phone</th>
+                    <th>Dress Code</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QR CODE MANAGEMENT TAB -->
+      <div class="tab-pane fade" id="qrcode-pane">
+        <div class="mt-4">
+          <div class="dashboard-card">
+            <h5><i class="bi bi-qr-code text-primary"></i> QR Code Management</h5>
+            
+            <div class="alert alert-info" id="qrStatusAlert">
+              <div class="d-flex justify-content-between align-items-center">
+                <div id="qrStatusText">Checking QR Status...</div>
+              </div>
+            </div>
+            
+            <div class="row mt-3">
+              <div class="col-md-4 mb-3">
+                <div class="card text-center h-100">
+                  <div class="card-body">
+                    <i class="bi bi-qr-code-scan" style="font-size: 3rem; color: #0d6efd;"></i>
+                    <h5 class="card-title mt-3">Generate Missing</h5>
+                    <p class="card-text">Create QR codes for students missing QR codes.</p>
+                    <button class="btn btn-primary w-100" onclick="generateMissingQRCodes()" id="generateQRBtn">
+                      <i class="bi bi-play-fill"></i> Start Generation
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <div class="card text-center h-100">
+                  <div class="card-body">
+                    <i class="bi bi-arrow-repeat" style="font-size: 3rem; color: #f59e0b;"></i>
+                    <h5 class="card-title mt-3">Regenerate All</h5>
+                    <p class="card-text">Recreate QR codes for all students in database.</p>
+                    <button class="btn btn-warning w-100" onclick="regenerateAllQRCodes()" id="regenerateQRBtn">
+                      <i class="bi bi-arrow-clockwise"></i> Regenerate All
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <div class="card text-center h-100">
+                  <div class="card-body">
+                    <i class="bi bi-images" style="font-size: 3rem; color: #10b981;"></i>
+                    <h5 class="card-title mt-3">QR Gallery</h5>
+                    <p class="card-text">View and download individual student QR codes.</p>
+                    <button class="btn btn-success w-100" onclick="viewQRCodeGallery()" id="viewQRBtn">
+                      <i class="bi bi-eye"></i> Open Gallery
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div id="qrResults" class="mt-3" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STUDENT LIST TABLE TAB -->
+      <div class="tab-pane fade" id="studentlist-pane">
+        <div class="mt-4">
+          <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4><i class="bi bi-table text-primary"></i> Student List & Quick Edit</h4>
+              <div class="btn-group">
+                <button class="btn btn-success" onclick="exportStudentList()">
+                  <i class="bi bi-download"></i> Export CSV
+                </button>
+                <button class="btn btn-info text-white" onclick="recountFromStudentList()">
+                  <i class="bi bi-arrow-repeat"></i> Recount Stock
+                </button>
+              </div>
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-4 mb-2">
+                <select class="form-select" id="filterClass" onchange="applyFilters()">
+                  <option value="">All Classes</option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-2">
+                <input type="text" class="form-control" id="searchStudent" placeholder="Search by name or ID..." onkeyup="applyFilters()">
+              </div>
+              <div class="col-md-4 mb-2">
+                <div class="d-flex gap-2">
+                  <button class="btn btn-outline-secondary w-50" onclick="resetFilters()">Reset</button>
+                  <button class="btn btn-primary w-50" onclick="applyFilters()">Filter</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bulk Edit Bar -->
+            <div class="card mb-3">
+              <div class="card-body py-2">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                  <div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openBulkEdit()" id="bulkEditBtn" disabled>
+                      <i class="bi bi-pencil-square"></i> Bulk Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary ms-1" onclick="clearSelections()">
+                      <i class="bi bi-x-circle"></i> Clear
+                    </button>
+                    <button class="btn btn-sm btn-whatsapp ms-1" onclick="sendBulkWhatsApp()" id="bulkWhatsAppBtn" disabled>
+                      <i class="bi bi-whatsapp"></i> Send WhatsApp
+                    </button>
+                  </div>
+                  <div>
+                    <span class="badge bg-primary" id="selectedCount">0 selected</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="table-responsive">
+              <table id="studentListTable" class="table table-striped table-bordered table-hover" style="width:100%">
+                <thead class="table-dark">
+                  <tr>
+                    <th width="40"><input type="checkbox" id="selectAllStudents" onclick="toggleSelectAll(this)"></th>
+                    <th>Student ID</th>
+                    <th>Class</th>
+                    <th>Name</th>
+                    <th>Song/Event</th>
+                    <th>Price (₹)</th>
+                    <th>Total</th>
+                    <th>Remaining</th>
+                    <th>Phone</th>
+                    <th>Dress Code</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRINT LABELS TAB -->
+      <div class="tab-pane fade" id="print-pane">
+        <div class="mt-4">
+          <div class="dashboard-card">
+            <h5><i class="bi bi-printer text-primary"></i> Print Student QR Labels</h5>
+            
+            <div class="select-controls">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0"><i class="bi bi-tags"></i> Select Students for Labels</h6>
+                <span class="selected-count" id="printBatchCount">0 selected</span>
+              </div>
+              
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                <button class="btn btn-sm btn-primary" onclick="selectAllForPrint()">Select All</button>
+                <button class="btn btn-sm btn-secondary" onclick="clearPrintSelection()">Clear All</button>
+                <button class="btn btn-sm btn-warning" onclick="selectLowStockForPrint()">Select Low Stock</button>
+                <div class="ms-auto">
+                  <button class="btn btn-sm btn-outline-primary me-2" onclick="openPrintPreview()" id="previewPrintBtn" disabled>
+                    <i class="bi bi-eye"></i> Preview
+                  </button>
+                  <button class="btn btn-sm btn-success" onclick="printSelectedLabels()" id="printLabelsBtn" disabled>
+                    <i class="bi bi-printer"></i> Print Labels
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="print-options">
+              <h6><i class="bi bi-gear"></i> Layout & Options</h6>
+              
+              <div class="mb-3">
+                <label class="form-label font-weight-bold">Label Layout</label>
+                <div class="layout-options">
+                  <div class="layout-option active" onclick="selectLayout(1)">
+                    <small>Split Layout<br>(Side-by-side Info & QR)</small>
+                  </div>
+                  <div class="layout-option" onclick="selectLayout(2)">
+                    <small>Stacked Layout<br>(Top Info, Bottom QR)</small>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Include Information:</label>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="includeQR" checked>
+                    <label class="form-check-label" for="includeQR">QR Code</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="includePhone" checked>
+                    <label class="form-check-label" for="includePhone">Phone Number</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="includeDressCode" checked>
+                    <label class="form-check-label" for="includeDressCode">Dress Code</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="includeEvent" checked>
+                    <label class="form-check-label" for="includeEvent">Song/Event</label>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Paper Size</label>
+                  <select class="form-select" id="paperSize">
+                    <option value="A4" selected>A4 (210×297mm)</option>
+                    <option value="Letter">Letter (8.5×11in)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-3">
+              <h6>Select Students to Include:</h6>
+              <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                <table class="table table-sm table-hover" id="selectedPrintTable">
+                  <thead>
+                    <tr>
+                      <th width="40">Print</th>
+                      <th>Student ID</th>
+                      <th>Name</th>
+                      <th>Class</th>
+                      <th>Phone</th>
+                    </tr>
+                  </thead>
+                  <tbody id="selectedPrintList"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Edit Student Modal -->
+  <div class="modal fade" id="editStudentModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Student</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editStudentForm">
+            <input type="hidden" id="editStudentId">
+            <div class="mb-3">
+              <label class="form-label">Student ID</label>
+              <input type="text" class="form-control" id="editStudentID" readonly>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Class</label>
+              <select class="form-select" id="editClass" required></select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Student Name</label>
+              <input type="text" class="form-control" id="editName" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Song/Event</label>
+              <select class="form-select" id="editSongEvent" required></select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Dress Price (₹)</label>
+              <input type="number" step="0.01" class="form-control" id="editPrice" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Total Dress Allocated</label>
+              <input type="number" class="form-control" id="editTotalDress" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Remaining Dress</label>
+              <input type="number" class="form-control" id="editRemainingDress" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Phone Number</label>
+              <input type="tel" class="form-control" id="editPhoneNo" pattern="[0-9]{10}" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Dress Code</label>
+              <select class="form-select" id="editDressCode" required></select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveStudentEdit()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Gallery Modal -->
+  <div class="modal fade" id="qrGalleryModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">QR Code Gallery</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="qrGalleryContent" class="row"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Preview Modal -->
+  <div class="modal fade" id="receiptPreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Dress Sale Receipt</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="receiptPreview" class="thermal-receipt"></div>
+          <div class="mt-4 text-center">
+            <button class="btn btn-success me-2 btn-whatsapp" onclick="sendWhatsAppReceipt()">
+              <i class="bi bi-whatsapp"></i> Send via WhatsApp
+            </button>
+            <button class="btn btn-primary" onclick="printReceipt()">
+              <i class="bi bi-printer"></i> Print Receipt
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Edit Modal -->
+  <div class="modal fade" id="bulkEditModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Bulk Edit Selected Students</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label"><strong>Selected Students:</strong></label>
+            <div id="selectedStudentsList" class="border p-2 rounded" style="max-height: 150px; overflow-y: auto;"></div>
+          </div>
+          <form id="bulkEditForm">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Song/Event Name</label>
+                <select class="form-select" id="bulkSongEvent">
+                  <option value="">-- Keep Current --</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Dress Code</label>
+                <select class="form-select" id="bulkDressCode">
+                  <option value="">-- Keep Current --</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Dress Price (₹)</label>
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input type="number" step="0.01" class="form-control" id="bulkPrice" placeholder="Enter new price or leave empty">
+                <button type="button" class="btn btn-outline-secondary" onclick="showCommonPrices()">Common Prices</button>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="applyBulkEdit()">Apply Bulk Edit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Common Prices Modal -->
+  <div class="modal fade" id="commonPricesModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Select Common Price</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="list-group" id="commonPricesList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fee Management Modal -->
+  <div class="modal fade" id="feeManagementModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Manage Class Fees</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Select Class</label>
+              <select class="form-select" id="feeClassSelect" onchange="loadClassFeesForManagement()">
+                <option value="">Select Class</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Add New Fee Type</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="newFeeTypeInput" placeholder="e.g. Exam Fees">
+                <button class="btn btn-outline-secondary" type="button" onclick="addNewFeeType()">Add Fee</button>
+              </div>
+            </div>
+          </div>
+          
+          <div id="feeManagementSection" style="display: none;">
+            <h6>Fee Structure for: <span id="selectedClassForFees" class="text-primary"></span></h6>
+            <div id="feeInputs" class="row mt-3"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveClassFees()" id="saveFeesBtn" disabled>Save Class Fees</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print Preview Modal -->
+  <div class="modal fade" id="printPreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Print Preview</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="print-preview-container" id="printPreviewContainer"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-success" onclick="printLabels()">Print Now</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- External JS Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- APP SCRIPT LOGIC -->
+  <script>
+    let dashboardCharts = {};
+    let html5QrcodeScanner = null;
+    let selectedForPrint = new Set();
+    let selectedStudents = new Set();
+    let allStudentsData = [];
+    let lastReceiptData = null;
+    let selectedLayout = 1;
+    let bulkEditDropdownData = null;
+    let lastScannedStudentId = '';
+
+    document.addEventListener('DOMContentLoaded', function() {
+      preventFormSubmit();
+      setupStudentRegistration();
+      setupQuantityListener();
+      loadDropdowns();
+      loadDashboard();
+      checkQRCodeStatus();
+      initializePrintLayout();
+      initializeMobileTabSystem();
+
+      $('#manage-tab').on('click', function() { setTimeout(loadStudents, 300); });
+      $('#scan-tab').on('click', function() { setTimeout(initializeQRScanner, 300); });
+      $('#print-tab').on('click', function() { setTimeout(loadPrintTab, 300); });
+      $('#studentlist-tab').on('click', function() { setTimeout(loadStudentList, 300); });
+      
+      initializeFees();
+    });
+
+    function preventFormSubmit() {
+      document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', e => e.preventDefault());
+      });
+    }
+
+    function initializeMobileTabSystem() {
+      updateMobileTabTitle('dashboard');
+    }
+
+    function updateMobileTabTitle(tabName) {
+      const titles = {
+        dashboard: '<i class="bi bi-speedometer2 text-success"></i> Dashboard',
+        scan: '<i class="bi bi-qr-code-scan text-primary"></i> Scan & Issue',
+        register: '<i class="bi bi-plus-circle text-success"></i> Register',
+        manage: '<i class="bi bi-gear-fill text-primary"></i> Manage',
+        qrcode: '<i class="bi bi-qr-code text-primary"></i> QR Codes',
+        studentlist: '<i class="bi bi-table text-primary"></i> Student List',
+        print: '<i class="bi bi-printer text-primary"></i> Print Labels'
+      };
+      const titleEl = document.getElementById('currentTabTitle');
+      if (titleEl && titles[tabName]) titleEl.innerHTML = titles[tabName];
+    }
+
+    function switchMobileTab(tabName) {
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('show', 'active'));
+      const target = document.getElementById(`${tabName}-pane`);
+      if (target) target.classList.add('show', 'active');
+
+      document.querySelectorAll('#desktopTabs .nav-link').forEach(t => t.classList.remove('active'));
+      const desktopTab = document.getElementById(`${tabName}-tab`);
+      if (desktopTab) desktopTab.classList.add('active');
+
+      updateMobileTabTitle(tabName);
+      
+      const menu = document.getElementById('mobileTabMenu');
+      if (menu && menu.classList.contains('show')) {
+        const bsCollapse = new bootstrap.Collapse(menu);
+        bsCollapse.hide();
+      }
+
+      setTimeout(() => {
+        if (tabName === 'scan') initializeQRScanner();
+        if (tabName === 'manage') loadStudents();
+        if (tabName === 'studentlist') loadStudentList();
+        if (tabName === 'print') loadPrintTab();
+      }, 300);
+    }
+
+    function refreshAll() {
+      loadDashboard();
+      checkQRCodeStatus();
+      if (typeof loadStudents === 'function') loadStudents();
+      if (typeof loadStudentList === 'function') loadStudentList();
+      Swal.fire({ icon: 'success', title: 'Refreshed!', timer: 1200, showConfirmButton: false });
+    }
+
+    function handleLogoError() {
+      const logo = document.getElementById('school-logo');
+      const fallback = document.querySelector('.logo-fallback');
+      if (logo) logo.style.display = 'none';
+      if (fallback) fallback.style.display = 'flex';
+    }
+
+    function setupStudentRegistration() {
+      const form = document.getElementById('StudentRegisterForm');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          registerStudent();
+        });
+      }
+    }
+
+    function setupQuantityListener() {
+      const qtyField = document.getElementById('quantity');
+      if (qtyField) {
+        qtyField.addEventListener('input', updateTotalAmount);
+      }
+    }
+
+    function updateTotalAmount() {
+      const price = parseFloat(document.getElementById('price').value) || 0;
+      const qty = parseInt(document.getElementById('quantity').value) || 0;
+      const total = price * qty;
+      const display = document.getElementById('totalAmountDisplay');
+      
+      if (total > 0 && display) {
+        document.getElementById('totalAmount').textContent = total.toFixed(2);
+        display.style.display = 'block';
+      } else if (display) {
+        display.style.display = 'none';
+      }
+      updateFeeTotals();
+    }
+
+    function updateFeeTotals() {
+      const qty = parseInt(document.getElementById('quantity')?.value) || 0;
+      const price = parseFloat(document.getElementById('price')?.value) || 0;
+      const dressTotal = qty * price;
+      
+      let selectedFeesTotal = 0;
+      document.querySelectorAll('.fee-checkbox:checked').forEach(cb => {
+        selectedFeesTotal += parseFloat(cb.getAttribute('data-amount')) || 0;
+      });
+      
+      const grandTotal = dressTotal + selectedFeesTotal;
+      if (document.getElementById('dressTotalAmount')) document.getElementById('dressTotalAmount').textContent = dressTotal.toFixed(2);
+      if (document.getElementById('selectedFeesTotal')) document.getElementById('selectedFeesTotal').textContent = selectedFeesTotal.toFixed(2);
+      if (document.getElementById('grandTotalAmount')) document.getElementById('grandTotalAmount').textContent = grandTotal.toFixed(2);
+    }
+
+    function loadDropdowns() {
+      google.script.run.withSuccessHandler(classes => {
+        const select = document.getElementById("newStudentClass");
+        if (select) {
+          select.innerHTML = '<option value="" disabled selected>Select Class</option>';
+          classes.forEach(c => select.add(new Option(c, c)));
+        }
+      }).getClasses();
+
+      google.script.run.withSuccessHandler(events => {
+        const select = document.getElementById("newSongEvent");
+        if (select) {
+          select.innerHTML = '<option value="" disabled selected>Select Song/Event</option>';
+          events.forEach(e => select.add(new Option(e, e)));
+        }
+      }).getSongEvents();
+
+      google.script.run.withSuccessHandler(codes => {
+        const select = document.getElementById("newDressCode");
+        if (select) {
+          select.innerHTML = '<option value="" disabled selected>Select Dress Code</option>';
+          codes.forEach(c => select.add(new Option(c, c)));
+        }
+      }).getDressCodes();
+    }
+
+    function loadEditDropdowns() {
+      google.script.run.withSuccessHandler(classes => {
+        const select = document.getElementById("editClass");
+        if (select) {
+          select.innerHTML = '<option value="">Select Class</option>';
+          classes.forEach(c => select.add(new Option(c, c)));
+        }
+      }).getClasses();
+
+      google.script.run.withSuccessHandler(events => {
+        const select = document.getElementById("editSongEvent");
+        if (select) {
+          select.innerHTML = '<option value="">Select Song/Event</option>';
+          events.forEach(e => select.add(new Option(e, e)));
+        }
+      }).getSongEvents();
+
+      google.script.run.withSuccessHandler(codes => {
+        const select = document.getElementById("editDressCode");
+        if (select) {
+          select.innerHTML = '<option value="">Select Dress Code</option>';
+          codes.forEach(c => select.add(new Option(c, c)));
+        }
+      }).getDressCodes();
+    }
+
+    // DASHBOARD & CHARTS
+    function loadDashboard() {
+      google.script.run.withSuccessHandler(data => {
+        if (!data || !data.success) return;
+        document.getElementById('statTotalStudents').textContent = data.totalStudents || 0;
+        document.getElementById('statTotalRevenue').textContent = '₹' + (data.totalRevenue || 0).toLocaleString();
+        document.getElementById('statTotalSales').textContent = data.totalSales || 0;
+        document.getElementById('statLowStock').textContent = data.lowDressStudents || 0;
+
+        renderCharts(data);
+      }).getDashboardData();
+    }
+
+    function refreshDashboard() {
+      loadDashboard();
+      Swal.fire({ icon: 'success', title: 'Dashboard Updated', timer: 1000, showConfirmButton: false });
+    }
+
+    function renderCharts(data) {
+      if (dashboardCharts.classSales) dashboardCharts.classSales.destroy();
+      if (dashboardCharts.classRevenue) dashboardCharts.classRevenue.destroy();
+      if (dashboardCharts.topStudents) dashboardCharts.topStudents.destroy();
+      if (dashboardCharts.salesTrend) dashboardCharts.salesTrend.destroy();
+
+      // Class Sales Chart
+      const csCtx = document.getElementById('classSalesChart')?.getContext('2d');
+      if (csCtx) {
+        dashboardCharts.classSales = new Chart(csCtx, {
+          type: 'bar',
+          data: {
+            labels: Object.keys(data.classSales || {}),
+            datasets: [{
+              label: 'Dress Quantity Sold',
+              data: Object.values(data.classSales || {}),
+              backgroundColor: '#10b981'
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+
+      // Class Revenue Chart
+      const crCtx = document.getElementById('classRevenueChart')?.getContext('2d');
+      if (crCtx) {
+        dashboardCharts.classRevenue = new Chart(crCtx, {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(data.classRevenue || {}),
+            datasets: [{
+              data: Object.values(data.classRevenue || {}),
+              backgroundColor: ['#10b981', '#06b6d4', '#f59e0b', '#ef4444', '#8b5cf6']
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+
+      // Top Students Chart
+      const tsCtx = document.getElementById('topStudentsChart')?.getContext('2d');
+      if (tsCtx && data.topStudents) {
+        dashboardCharts.topStudents = new Chart(tsCtx, {
+          type: 'bar',
+          data: {
+            labels: data.topStudents.map(s => s.name),
+            datasets: [{
+              label: 'Revenue (₹)',
+              data: data.topStudents.map(s => s.revenue),
+              backgroundColor: '#06b6d4'
+            }]
+          },
+          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
+        });
+      }
+
+      // Sales Trend Chart
+      const stCtx = document.getElementById('salesTrendChart')?.getContext('2d');
+      if (stCtx && data.dailySales) {
+        dashboardCharts.salesTrend = new Chart(stCtx, {
+          type: 'line',
+          data: {
+            labels: Object.keys(data.dailySales),
+            datasets: [{
+              label: 'Daily Revenue (₹)',
+              data: Object.values(data.dailySales).map(d => d.revenue),
+              borderColor: '#f59e0b',
+              fill: false
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+    }
+
+    // REGISTER STUDENT
+    function registerStudent() {
+      const studentData = {
+        studentId: document.getElementById('newStudentID')?.value?.trim() || '',
+        className: document.getElementById('newStudentClass')?.value || '',
+        studentName: document.getElementById('newStudentName')?.value?.trim() || '',
+        songEvent: document.getElementById('newSongEvent')?.value || '',
+        price: document.getElementById('newDressPrice')?.value || '',
+        initialDress: document.getElementById('newTotalDress')?.value || '',
+        phoneNo: document.getElementById('newPhoneNo')?.value?.trim() || '',
+        dressCode: document.getElementById('newDressCode')?.value || ''
+      };
+
+      const phoneRegex = /^[0-9]{10}$/;
+      if (!phoneRegex.test(studentData.phoneNo)) {
+        Swal.fire({ icon: 'error', title: 'Invalid Phone Number', text: 'Please enter a valid 10-digit phone number.' });
+        return;
+      }
+
+      const spinner = document.getElementById('loadingSpinner');
+      const form = document.getElementById('StudentRegisterForm');
+      if (spinner) spinner.style.display = 'block';
+      if (form) form.style.display = 'none';
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (spinner) spinner.style.display = 'none';
+          if (res.success) {
+            document.getElementById('generatedCode').textContent = res.studentId;
+            document.getElementById('generatedClass').textContent = studentData.className;
+            document.getElementById('generatedName').textContent = studentData.studentName;
+            document.getElementById('generatedPhone').textContent = studentData.phoneNo;
+            document.getElementById('generatedDress').textContent = studentData.dressCode;
+
+            const qrContainer = document.getElementById('qrCodeContainer');
+            if (qrContainer) {
+              qrContainer.innerHTML = '';
+              if (res.qrUrl) {
+                const img = document.createElement('img');
+                img.src = res.qrUrl;
+                img.width = 180;
+                qrContainer.appendChild(img);
+              } else {
+                new QRCode(qrContainer, { text: res.studentId, width: 180, height: 180 });
+              }
+            }
+            document.getElementById('qrCodeDisplay').style.display = 'block';
+            loadDashboard();
+          } else {
+            if (form) form.style.display = 'block';
+            Swal.fire({ icon: 'error', title: 'Registration Failed', text: res.error });
+          }
+        })
+        .withFailureHandler(err => {
+          if (spinner) spinner.style.display = 'none';
+          if (form) form.style.display = 'block';
+          Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+        })
+        .saveStudent(studentData);
+    }
+
+    function resetStudentForm() {
+      const form = document.getElementById('StudentRegisterForm');
+      if (form) {
+        form.reset();
+        form.style.display = 'block';
+      }
+      document.getElementById('qrCodeDisplay').style.display = 'none';
+    }
+
+    function downloadGeneratedQR() {
+      const studentId = document.getElementById('generatedCode')?.textContent;
+      if (studentId) {
+        google.script.run.withSuccessHandler(res => {
+          if (res.success && res.downloadUrl) {
+            const a = document.createElement('a');
+            a.href = res.downloadUrl;
+            a.download = res.filename || `QR_${studentId}.png`;
+            a.click();
+          } else if (res.qrUrl) {
+            window.open(res.qrUrl, '_blank');
+          }
+        }).getQRCodeForDownload(studentId);
+      }
+    }
+
+    // SCAN & ISSUE DRESS
+    function initializeQRScanner() {
+      stopQRScanner();
+      try {
+        if (typeof Html5QrcodeScanner === 'undefined') {
+          showManualInputOnly();
+          return;
+        }
+        html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
+        html5QrcodeScanner.render(onScanSuccess, err => console.log(err));
+      } catch (e) {
+        showManualInputOnly();
+      }
+    }
+
+    function onScanSuccess(decodedText) {
+      playSuccessBeep();
+      processScannedCode(decodedText);
+    }
+
+    function stopQRScanner() {
+      if (html5QrcodeScanner) {
+        try { html5QrcodeScanner.clear(); html5QrcodeScanner = null; } catch (e) {}
+      }
+    }
+
+    function showManualInputOnly() {
+      const div = document.getElementById('qr-reader');
+      if (div) {
+        div.innerHTML = `<div class="alert alert-warning">Scanner unavailable. Use manual lookup below.</div>`;
+      }
+    }
+
+    function lookupManualCode() {
+      const code = document.getElementById('manualStudentCode')?.value?.trim();
+      if (!code) return;
+      processScannedCode(code);
+    }
+
+    function processScannedCode(studentId) {
+      google.script.run.withSuccessHandler(student => {
+        if (student && student.studentId) {
+          fillStudentForm(student);
+        } else {
+          Swal.fire({ icon: 'error', title: 'Student Not Found', text: `No student registered with ID: ${studentId}` });
+        }
+      }).lookupStudent(studentId);
+    }
+
+    function fillStudentForm(student) {
+      document.getElementById("studentCode").value = student.studentId || '';
+      document.getElementById("studentName").value = student.studentName || '';
+      document.getElementById("className").value = student.className || '';
+      document.getElementById("songEvent").value = student.songEvent || '';
+      document.getElementById("price").value = student.price || '';
+      document.getElementById("phoneNo").value = student.phoneNo || '';
+      document.getElementById("dressCode").value = student.dressCode || '';
+      document.getElementById("currentDress").value = student.remainingDress || 0;
+      document.getElementById("quantity").value = '';
+      
+      lastScannedStudentId = student.studentId || '';
+      
+      if (student.className) loadClassFees(student.className);
+      
+      document.getElementById('additionalPaymentBtn').disabled = !student.studentId;
+      document.getElementById('viewFeeHistoryBtn').disabled = !student.studentId;
+      
+      if (student.studentId) checkUnpaidFees(student.studentId);
+    }
+
+    function playSuccessBeep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        osc.connect(ctx.destination);
+        osc.frequency.value = 800;
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
+      } catch (e) {}
+    }
+
+    function loadClassFees(className) {
+      google.script.run.withSuccessHandler(res => {
+        if (res.success && Object.keys(res.fees).length > 0) {
+          displayClassFees(className, res.fees);
+        } else {
+          hideFeeSection();
+        }
+      }).getClassFees(className);
+    }
+
+    function displayClassFees(className, fees) {
+      const feeSection = document.getElementById('feeSection');
+      const feeCheckboxes = document.getElementById('feeCheckboxes');
+      document.getElementById('currentClassName').textContent = className;
+      
+      feeCheckboxes.innerHTML = '';
+      Object.keys(fees).forEach(feeName => {
+        const amount = fees[feeName];
+        const id = `fee_${feeName.replace(/\s+/g, '_')}`;
+        const div = document.createElement('div');
+        div.className = 'form-check form-check-inline mb-2';
+        div.innerHTML = `
+          <input class="form-check-input fee-checkbox" type="checkbox" id="${id}" value="${feeName}" data-amount="${amount}" onchange="updateFeeTotals()">
+          <label class="form-check-label" for="${id}">${feeName}: ₹${amount}</label>
+        `;
+        feeCheckboxes.appendChild(div);
+      });
+      feeSection.style.display = 'block';
+      updateFeeTotals();
+    }
+
+    function hideFeeSection() {
+      const feeSection = document.getElementById('feeSection');
+      if (feeSection) feeSection.style.display = 'none';
+      if (document.getElementById('dressTotalAmount')) document.getElementById('dressTotalAmount').textContent = '0.00';
+      if (document.getElementById('selectedFeesTotal')) document.getElementById('selectedFeesTotal').textContent = '0.00';
+      if (document.getElementById('grandTotalAmount')) document.getElementById('grandTotalAmount').textContent = '0.00';
+    }
+
+    function checkUnpaidFees(studentId) {
+      google.script.run.withSuccessHandler(res => {
+        const alertBox = document.getElementById('unpaidFeesAlert');
+        if (res.success && res.hasUnpaidFees) {
+          document.getElementById('unpaidFeesMessage').textContent = `Unpaid Fees: ₹${res.totalUnpaid}`;
+          alertBox.style.display = 'block';
+        } else if (alertBox) {
+          alertBox.style.display = 'none';
+        }
+      }).getUnpaidFees(studentId);
+    }
+
+    function processDressSale() {
+      const studentCode = document.getElementById("studentCode")?.value;
+      const quantity = parseInt(document.getElementById("quantity")?.value) || 0;
+      
+      if (!studentCode) {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Please scan or select a student first.' });
+        return;
+      }
+      if (quantity <= 0) {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Please enter a valid quantity.' });
+        return;
+      }
+
+      const formObject = {
+        studentCode: studentCode,
+        student_name: document.getElementById("studentName").value,
+        class_name: document.getElementById("className").value,
+        song_event: document.getElementById("songEvent").value,
+        price: document.getElementById("price").value,
+        quantity: quantity,
+        phone_no: document.getElementById("phoneNo").value,
+        dress_code: document.getElementById("dressCode").value
+      };
+
+      const selectedFees = [];
+      document.querySelectorAll('.fee-checkbox:checked').forEach(cb => selectedFees.push(cb.value));
+      formObject.feeCategories = JSON.stringify(selectedFees);
+
+      Swal.fire({
+        title: 'Processing Sale...',
+        didOpen: () => Swal.showLoading(),
+        allowOutsideClick: false
+      });
+
+      google.script.run.withSuccessHandler(res => {
+        Swal.close();
+        if (res.success) {
+          lastReceiptData = res.saleData;
+          Swal.fire({
+            icon: 'success',
+            title: 'Dress Issued!',
+            html: `
+              <p>Grand Total: <strong>₹${res.saleData.grandTotal}</strong></p>
+              <button class="btn btn-primary btn-sm me-2" onclick="showReceiptPreview()">View Receipt</button>
+              <button class="btn btn-success btn-sm btn-whatsapp" onclick="sendWhatsAppReceipt()">WhatsApp</button>
+            `
+          });
+          loadDashboard();
+          document.getElementById('InventoryForm').reset();
+          hideFeeSection();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Sale Failed', text: res.error });
+        }
+      }).processDressSale(formObject);
+    }
+
+    function showReceiptPreview() {
+      if (!lastReceiptData) return;
+      const container = document.getElementById('receiptPreview');
+      container.innerHTML = `
+        <div class="receipt-header">
+          SUCCESS SCHOOL INDI<br>DRESS SALE RECEIPT
+        </div>
+        <div class="receipt-item"><span>Student:</span><span>${lastReceiptData.studentName}</span></div>
+        <div class="receipt-item"><span>Class:</span><span>${lastReceiptData.className}</span></div>
+        <div class="receipt-item"><span>Quantity:</span><span>${lastReceiptData.quantity}</span></div>
+        <div class="receipt-item"><span>Dress Total:</span><span>₹${lastReceiptData.dressTotal}</span></div>
+        <div class="receipt-item"><span>Total Fees:</span><span>₹${lastReceiptData.totalFees}</span></div>
+        <div class="receipt-total">
+          <div class="receipt-item"><span>GRAND TOTAL:</span><span>₹${lastReceiptData.grandTotal}</span></div>
+        </div>
+      `;
+      new bootstrap.Modal(document.getElementById('receiptPreviewModal')).show();
+    }
+
+    function printReceipt() {
+      window.print();
+    }
+
+    function sendWhatsAppReceipt() {
+      if (!lastReceiptData || !lastReceiptData.phoneNo) {
+        Swal.fire({ icon: 'warning', title: 'No Phone Number', text: 'No phone number associated with this student.' });
+        return;
+      }
+      google.script.run.withSuccessHandler(res => {
+        if (res.success) window.open(res.whatsappLink, '_blank');
+      }).getWhatsAppLink(lastReceiptData.phoneNo, lastReceiptData);
+    }
+
+    // MANAGE STUDENTS TABLE
+    function loadStudents() {
+      google.script.run.withSuccessHandler(students => {
+        allStudentsData = students;
+        if ($.fn.DataTable.isDataTable('#studentsTable')) {
+          $('#studentsTable').DataTable().destroy();
+        }
+        const tbody = document.querySelector('#studentsTable tbody');
+        tbody.innerHTML = '';
+        students.forEach(s => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${s.id}</td>
+            <td>${s.class}</td>
+            <td>${s.name}</td>
+            <td>${s.songEvent}</td>
+            <td>₹${s.price}</td>
+            <td>${s.totalDress}</td>
+            <td><span class="badge ${s.remainingDress < 2 ? 'bg-danger' : 'bg-success'}">${s.remainingDress}</span></td>
+            <td>${s.phoneNo}</td>
+            <td>${s.dressCode}</td>
+            <td>
+              <button class="btn btn-sm btn-primary me-1" onclick="editStudent('${s.id}')"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-danger" onclick="deleteStudent('${s.id}')"><i class="bi bi-trash"></i></button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+        $('#studentsTable').DataTable();
+      }).getAllStudents();
+    }
+
+    function recountDress() {
+      Swal.fire({ title: 'Recounting...', didOpen: () => Swal.showLoading() });
+      google.script.run.withSuccessHandler(res => {
+        Swal.fire({ icon: 'success', title: 'Stock Recounted', text: res.message });
+        loadStudents();
+        loadDashboard();
+      }).recalculateDress();
+    }
+
+    function editStudent(studentId) {
+      const student = allStudentsData.find(s => s.id === studentId);
+      if (!student) return;
+      loadEditDropdowns();
+      
+      document.getElementById('editStudentId').value = student.id;
+      document.getElementById('editStudentID').value = student.id;
+      document.getElementById('editName').value = student.name;
+      document.getElementById('editPrice').value = student.price;
+      document.getElementById('editTotalDress').value = student.totalDress;
+      document.getElementById('editRemainingDress').value = student.remainingDress;
+      document.getElementById('editPhoneNo').value = student.phoneNo;
+
+      setTimeout(() => {
+        document.getElementById('editClass').value = student.class;
+        document.getElementById('editSongEvent').value = student.songEvent;
+        document.getElementById('editDressCode').value = student.dressCode;
+      }, 200);
+
+      new bootstrap.Modal(document.getElementById('editStudentModal')).show();
+    }
+
+    function saveStudentEdit() {
+      const data = {
+        id: document.getElementById('editStudentId').value,
+        class: document.getElementById('editClass').value,
+        name: document.getElementById('editName').value,
+        songEvent: document.getElementById('editSongEvent').value,
+        price: parseFloat(document.getElementById('editPrice').value) || 0,
+        totalDress: parseInt(document.getElementById('editTotalDress').value) || 0,
+        remainingDress: parseInt(document.getElementById('editRemainingDress').value) || 0,
+        phoneNo: document.getElementById('editPhoneNo').value,
+        dressCode: document.getElementById('editDressCode').value
+      };
+
+      google.script.run.withSuccessHandler(res => {
+        if (res.success) {
+          bootstrap.Modal.getInstance(document.getElementById('editStudentModal')).hide();
+          Swal.fire({ icon: 'success', title: 'Student Updated', timer: 1000, showConfirmButton: false });
+          loadStudents();
+          loadDashboard();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Error', text: res.error });
+        }
+      }).updateStudent(data);
+    }
+
+    function deleteStudent(studentId) {
+      Swal.fire({
+        title: 'Delete Student?',
+        text: `Are you sure you want to delete student ${studentId}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444'
+      }).then(res => {
+        if (res.isConfirmed) {
+          google.script.run.withSuccessHandler(r => {
+            if (r.success) {
+              Swal.fire({ icon: 'success', title: 'Deleted', timer: 1000, showConfirmButton: false });
+              loadStudents();
+              loadDashboard();
+            }
+          }).deleteStudent(studentId);
+        }
+      });
+    }
+
+    // QR CODE MANAGEMENT
+    function checkQRCodeStatus() {
+      google.script.run.withSuccessHandler(res => {
+        if (res.success) {
+          document.getElementById('qrStatusAlert').className = 'alert alert-info';
+          document.getElementById('qrStatusAlert').innerHTML = `
+            <strong>QR Code Status:</strong> ${res.studentsWithQR} of ${res.totalStudents} students have QR codes (${res.percentageComplete}% complete).
+          `;
+        }
+      }).checkQRCodeStatus();
+    }
+
+    function generateMissingQRCodes() {
+      Swal.fire({ title: 'Generating Missing QR Codes...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+      google.script.run.withSuccessHandler(res => {
+        Swal.fire({ icon: 'success', title: 'Done!', text: res.message });
+        checkQRCodeStatus();
+      }).generateMissingQRCodes();
+    }
+
+    function regenerateAllQRCodes() {
+      generateMissingQRCodes();
+    }
+
+    function viewQRCodeGallery() {
+      google.script.run.withSuccessHandler(students => {
+        const container = document.getElementById('qrGalleryContent');
+        container.innerHTML = '';
+        students.forEach(s => {
+          const col = document.createElement('div');
+          col.className = 'col-md-3 col-sm-6 mb-3 text-center';
+          col.innerHTML = `
+            <div class="card p-3 h-100">
+              ${s.qrUrl ? `<img src="${s.qrUrl}" style="max-height: 150px; object-fit: contain;">` : '<div class="p-4 bg-light">No QR</div>'}
+              <h6 class="mt-2 mb-0">${s.name}</h6>
+              <small class="text-muted">${s.id} | ${s.class}</small>
+              <button class="btn btn-sm btn-outline-primary mt-2" onclick="downloadGalleryQR('${s.id}')">Download QR</button>
+            </div>
+          `;
+          container.appendChild(col);
+        });
+        new bootstrap.Modal(document.getElementById('qrGalleryModal')).show();
+      }).getAllStudents();
+    }
+
+    function downloadGalleryQR(studentId) {
+      google.script.run.withSuccessHandler(res => {
+        if (res.success && res.downloadUrl) {
+          const a = document.createElement('a');
+          a.href = res.downloadUrl;
+          a.download = res.filename;
+          a.click();
+        }
+      }).getQRCodeForDownload(studentId);
+    }
+
+    // STUDENT LIST & BULK EDIT
+    function loadStudentList() {
+      google.script.run.withSuccessHandler(students => {
+        allStudentsData = students;
+        const filterSelect = document.getElementById('filterClass');
+        if (filterSelect) {
+          const currentVal = filterSelect.value;
+          filterSelect.innerHTML = '<option value="">All Classes</option>';
+          const classes = [...new Set(students.map(s => s.class))].filter(Boolean).sort();
+          classes.forEach(c => filterSelect.add(new Option(c, c)));
+          filterSelect.value = currentVal;
+        }
+
+        renderStudentListTable(students);
+      }).getAllStudents();
+    }
+
+    function renderStudentListTable(students) {
+      if ($.fn.DataTable.isDataTable('#studentListTable')) {
+        $('#studentListTable').DataTable().destroy();
+      }
+      const tbody = document.querySelector('#studentListTable tbody');
+      tbody.innerHTML = '';
+
+      students.forEach(s => {
+        const isChecked = selectedStudents.has(s.id);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="checkbox" class="student-checkbox" value="${s.id}" ${isChecked ? 'checked' : ''} onclick="toggleStudentSelection('${s.id}', this)"></td>
+          <td>${s.id}</td>
+          <td>${s.class}</td>
+          <td>${s.name}</td>
+          <td>${s.songEvent}</td>
+          <td>₹${s.price}</td>
+          <td>${s.totalDress}</td>
+          <td><span class="badge ${s.remainingDress < 2 ? 'bg-danger' : 'bg-success'}">${s.remainingDress}</span></td>
+          <td>${s.phoneNo}</td>
+          <td>${s.dressCode}</td>
+          <td>
+            <button class="btn btn-sm btn-primary me-1" onclick="editStudent('${s.id}')"><i class="bi bi-pencil"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      $('#studentListTable').DataTable();
+    }
+
+    function applyFilters() {
+      const cls = document.getElementById('filterClass')?.value || '';
+      const search = document.getElementById('searchStudent')?.value?.toLowerCase() || '';
+
+      const filtered = allStudentsData.filter(s => {
+        const matchesClass = !cls || s.class === cls;
+        const matchesSearch = !search || s.name.toLowerCase().includes(search) || s.id.toLowerCase().includes(search);
+        return matchesClass && matchesSearch;
+      });
+
+      renderStudentListTable(filtered);
+    }
+
+    function resetFilters() {
+      document.getElementById('filterClass').value = '';
+      document.getElementById('searchStudent').value = '';
+      renderStudentListTable(allStudentsData);
+    }
+
+    function recountFromStudentList() {
+      recountDress();
+    }
+
+    function exportStudentList() {
+      let csv = 'Student ID,Class,Student Name,Song/Event,Price,Total Dress,Remaining Dress,Phone No,Dress Code\n';
+      allStudentsData.forEach(s => {
+        csv += `"${s.id}","${s.class}","${s.name}","${s.songEvent}",${s.price},${s.totalDress},${s.remainingDress},"${s.phoneNo}","${s.dressCode}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Student_List.csv';
+      a.click();
+    }
+
+    function toggleSelectAll(master) {
+      const checkboxes = document.querySelectorAll('.student-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = master.checked;
+        if (master.checked) selectedStudents.add(cb.value);
+        else selectedStudents.delete(cb.value);
+      });
+      updateSelectedCount();
+    }
+
+    function toggleStudentSelection(id, cb) {
+      if (cb.checked) selectedStudents.add(id);
+      else selectedStudents.delete(id);
+      updateSelectedCount();
+    }
+
+    function clearSelections() {
+      selectedStudents.clear();
+      document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = false);
+      if (document.getElementById('selectAllStudents')) document.getElementById('selectAllStudents').checked = false;
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      const count = selectedStudents.size;
+      document.getElementById('selectedCount').textContent = `${count} selected`;
+      document.getElementById('bulkEditBtn').disabled = count === 0;
+      document.getElementById('bulkWhatsAppBtn').disabled = count === 0;
+    }
+
+    function openBulkEdit() {
+      if (selectedStudents.size === 0) return;
+      google.script.run.withSuccessHandler(data => {
+        bulkEditDropdownData = data;
+        const seSelect = document.getElementById('bulkSongEvent');
+        const dcSelect = document.getElementById('bulkDressCode');
+        
+        seSelect.innerHTML = '<option value="">-- Keep Current --</option>';
+        dcSelect.innerHTML = '<option value="">-- Keep Current --</option>';
+
+        data.songEvents.forEach(e => seSelect.add(new Option(e, e)));
+        data.dressCodes.forEach(c => dcSelect.add(new Option(c, c)));
+
+        const listContainer = document.getElementById('selectedStudentsList');
+        listContainer.innerHTML = Array.from(selectedStudents).join(', ');
+
+        new bootstrap.Modal(document.getElementById('bulkEditModal')).show();
+      }).getDropdownDataForBulkEdit();
+    }
+
+    function showCommonPrices() {
+      if (!bulkEditDropdownData) return;
+      const list = document.getElementById('commonPricesList');
+      list.innerHTML = '';
+      bulkEditDropdownData.existingPrices.forEach(p => {
+        const item = document.createElement('a');
+        item.className = 'list-group-item list-group-item-action';
+        item.textContent = `₹${p}`;
+        item.onclick = () => {
+          document.getElementById('bulkPrice').value = p;
+          bootstrap.Modal.getInstance(document.getElementById('commonPricesModal')).hide();
+        };
+        list.appendChild(item);
+      });
+      new bootstrap.Modal(document.getElementById('commonPricesModal')).show();
+    }
+
+    function applyBulkEdit() {
+      const updates = [];
+      const songEvent = document.getElementById('bulkSongEvent').value;
+      const dressCode = document.getElementById('bulkDressCode').value;
+      const price = document.getElementById('bulkPrice').value;
+
+      selectedStudents.forEach(id => {
+        updates.push({
+          studentId: id,
+          songEvent: songEvent || null,
+          dressCode: dressCode || null,
+          price: price !== '' ? parseFloat(price) : null
+        });
+      });
+
+      Swal.fire({ title: 'Applying Bulk Edit...', didOpen: () => Swal.showLoading() });
+      google.script.run.withSuccessHandler(res => {
+        bootstrap.Modal.getInstance(document.getElementById('bulkEditModal')).hide();
+        Swal.fire({ icon: 'success', title: 'Bulk Edit Applied', text: res.message });
+        clearSelections();
+        loadStudentList();
+      }).bulkUpdateStudents(updates);
+    }
+
+    function sendBulkWhatsApp() {
+      alert(`Bulk WhatsApp queued for ${selectedStudents.size} students.`);
+    }
+
+    // PRINT LABELS TAB
+    function loadPrintTab() {
+      google.script.run.withSuccessHandler(students => {
+        allStudentsData = students;
+        const tbody = document.getElementById('selectedPrintList');
+        tbody.innerHTML = '';
+        students.forEach(s => {
+          const isChecked = selectedForPrint.has(s.id);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><input type="checkbox" value="${s.id}" ${isChecked ? 'checked' : ''} onchange="togglePrintSelect('${s.id}', this)"></td>
+            <td>${s.id}</td>
+            <td>${s.name}</td>
+            <td>${s.class}</td>
+            <td>${s.phoneNo}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+        updatePrintBatchCount();
+      }).getAllStudents();
+    }
+
+    function togglePrintSelect(id, cb) {
+      if (cb.checked) selectedForPrint.add(id);
+      else selectedForPrint.delete(id);
+      updatePrintBatchCount();
+    }
+
+    function selectAllForPrint() {
+      allStudentsData.forEach(s => selectedForPrint.add(s.id));
+      document.querySelectorAll('#selectedPrintList input').forEach(cb => cb.checked = true);
+      updatePrintBatchCount();
+    }
+
+    function clearPrintSelection() {
+      selectedForPrint.clear();
+      document.querySelectorAll('#selectedPrintList input').forEach(cb => cb.checked = false);
+      updatePrintBatchCount();
+    }
+
+    function selectLowStockForPrint() {
+      clearPrintSelection();
+      allStudentsData.filter(s => s.remainingDress < 2).forEach(s => selectedForPrint.add(s.id));
+      document.querySelectorAll('#selectedPrintList input').forEach(cb => {
+        if (selectedForPrint.has(cb.value)) cb.checked = true;
+      });
+      updatePrintBatchCount();
+    }
+
+    function updatePrintBatchCount() {
+      const count = selectedForPrint.size;
+      document.getElementById('printBatchCount').textContent = `${count} selected`;
+      document.getElementById('previewPrintBtn').disabled = count === 0;
+      document.getElementById('printLabelsBtn').disabled = count === 0;
+    }
+
+    function initializePrintLayout() {
+      selectLayout(1);
+    }
+
+    function selectLayout(layoutNum) {
+      selectedLayout = layoutNum;
+      document.querySelectorAll('.layout-option').forEach((opt, idx) => {
+        if (idx === layoutNum - 1) opt.classList.add('active');
+        else opt.classList.remove('active');
+      });
+    }
+
+    function openPrintPreview() {
+      const container = document.getElementById('printPreviewContainer');
+      container.innerHTML = '';
+      
+      const grid = document.createElement('div');
+      grid.className = 'print-label-grid';
+
+      const showQR = document.getElementById('includeQR').checked;
+      const showPhone = document.getElementById('includePhone').checked;
+      const showDressCode = document.getElementById('includeDressCode').checked;
+      const showEvent = document.getElementById('includeEvent').checked;
+
+      allStudentsData.filter(s => selectedForPrint.has(s.id)).forEach(s => {
+        const card = document.createElement('div');
+        card.className = `label-container ${selectedLayout === 2 ? 'stacked' : ''}`;
+        card.innerHTML = `
+          <div class="label-left">
+            <div class="school-header-name">SUCCESS SCHOOL INDI</div>
+            <h5><strong>${s.name}</strong></h5>
+            <p class="mb-1"><strong>ID:</strong> ${s.id} | <strong>Class:</strong> ${s.class}</p>
+            ${showEvent ? `<p class="mb-1"><small>Event: ${s.songEvent}</small></p>` : ''}
+            ${showDressCode ? `<p class="mb-1"><small>Dress Code: ${s.dressCode}</small></p>` : ''}
+            ${showPhone ? `<p class="mb-0"><small>Phone: ${s.phoneNo}</small></p>` : ''}
+          </div>
+          ${showQR ? `
+          <div class="label-right">
+            <div class="qr-container">
+              <img src="${s.qrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(s.id)}`}">
+            </div>
+            <small class="mt-1 fw-bold">${s.id}</small>
+          </div>
+          ` : ''}
+        `;
+        grid.appendChild(card);
+      });
+
+      container.appendChild(grid);
+      new bootstrap.Modal(document.getElementById('printPreviewModal')).show();
+    }
+
+    function printLabels() {
+      const content = document.getElementById('printPreviewContainer').innerHTML;
+      const win = window.open('', '_blank');
+      win.document.write(`
+        <html>
+        <head>
+          <title>Print Labels</title>
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
+          <style>
+            @media print {
+              body { margin: 0; padding: 10px; }
+              .label-container { page-break-inside: avoid; border: 1px solid #000; margin-bottom: 15px; display: flex; }
+              .label-container.stacked { flex-direction: column; }
+              .label-left { flex: 2; padding: 10px; }
+              .label-right { flex: 1; padding: 10px; text-align: center; }
+              .qr-container img { max-width: 100px; }
+              .print-label-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+            }
+          </style>
+        </head>
+        <body>
+          ${content}
+          <script>window.onload = function() { window.print(); setTimeout(() => window.close(), 500); };<\/script>
+        </body>
+        </html>
+      `);
+      win.document.close();
+    }
+
+    function printSelectedLabels() {
+      openPrintPreview();
+    }
+
+    // ADDITIONAL PAYMENTS & FEE HISTORY
+    function showAdditionalPayment() {
+      if (!lastScannedStudentId) return;
+      Swal.fire({
+        title: 'Pay Additional Fees',
+        text: 'Select fees from the fee section and click Issue Dress (Quantity 0)',
+        icon: 'info'
+      });
+    }
+
+    function viewFeeHistory() {
+      if (!lastScannedStudentId) return;
+      google.script.run.withSuccessHandler(res => {
+        if (res.success) {
+          let html = '<ul class="list-group text-start">';
+          res.transactions.forEach(t => {
+            html += `<li class="list-group-item">${t.timestamp} - Type: ${t.type} - Total: ₹${t.grandTotal}</li>`;
+          });
+          html += '</ul>';
+          Swal.fire({ title: 'Fee History', html: html });
+        }
+      }).getStudentFeeHistory(lastScannedStudentId);
+    }
+
+    // FEE MANAGEMENT MODAL
+    function manageClassFees() {
+      google.script.run.withSuccessHandler(classes => {
+        const select = document.getElementById('feeClassSelect');
+        select.innerHTML = '<option value="">Select Class</option>';
+        classes.forEach(c => select.add(new Option(c, c)));
+        new bootstrap.Modal(document.getElementById('feeManagementModal')).show();
+      }).getClasses();
+    }
+
+    function loadClassFeesForManagement() {
+      const cls = document.getElementById('feeClassSelect').value;
+      if (!cls) return;
+      document.getElementById('selectedClassForFees').textContent = cls;
+      
+      google.script.run.withSuccessHandler(res => {
+        const container = document.getElementById('feeInputs');
+        container.innerHTML = '';
+        const feeTypes = ['Admission Fees', 'Annual Day Fees', 'Sports Fees', 'Exam Fees', 'Library Fees', 'Medical Fees', 'Tour Fees', 'Lab Fees', 'Penalty Fees', 'Other Fees'];
+        
+        feeTypes.forEach(ft => {
+          const val = res.fees[ft] || 0;
+          const col = document.createElement('div');
+          col.className = 'col-md-6 mb-2';
+          col.innerHTML = `
+            <label class="form-label">${ft}</label>
+            <input type="number" class="form-control fee-type-input" data-name="${ft}" value="${val}">
+          `;
+          container.appendChild(col);
+        });
+
+        document.getElementById('feeManagementSection').style.display = 'block';
+        document.getElementById('saveFeesBtn').disabled = false;
+      }).getClassFees(cls);
+    }
+
+    function addNewFeeType() {
+      const feeName = document.getElementById('newFeeTypeInput')?.value?.trim();
+      if (!feeName) return;
+      google.script.run.withSuccessHandler(res => {
+        if (res.success) {
+          Swal.fire({ icon: 'success', title: 'Fee Type Added', timer: 1000, showConfirmButton: false });
+          loadClassFeesForManagement();
+        }
+      }).addNewFeeType(feeName);
+    }
+
+    function saveClassFees() {
+      const className = document.getElementById('feeClassSelect').value;
+      const fees = {};
+      document.querySelectorAll('.fee-type-input').forEach(input => {
+        const name = input.getAttribute('data-name');
+        const val = parseFloat(input.value) || 0;
+        if (val > 0) fees[name] = val;
+      });
+
+      google.script.run.withSuccessHandler(res => {
+        if (res.success) {
+          bootstrap.Modal.getInstance(document.getElementById('feeManagementModal')).hide();
+          Swal.fire({ icon: 'success', title: 'Class Fees Saved', timer: 1000, showConfirmButton: false });
+        }
+      }).saveClassFees({ className: className, fees: fees });
+    }
+
+    function initializeFees() {
+      google.script.run.initializeFeesInDropdown();
+    }
+  </script>
+</body>
+</html>
