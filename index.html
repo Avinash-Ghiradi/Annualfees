@@ -801,7 +801,8 @@
                 <form id="StudentRegisterForm">
                   <div class="mb-3 input-group">
                     <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
-                    <input type="text" class="form-control" id="newStudentID" placeholder="Student ID (e.g. STU1001)" required>
+                    <input type="text" class="form-control" id="newStudentID" placeholder="Student ID (e.g. STU1001 or leave blank for Auto ID)">
+                    <button type="button" class="btn btn-outline-secondary" onclick="autoGenerateNewStudentId()">Auto ID</button>
                   </div>
                   <div class="mb-3 input-group">
                     <span class="input-group-text"><i class="bi bi-mortarboard"></i></span>
@@ -1756,6 +1757,11 @@
     }
 
     // REGISTER STUDENT
+    function autoGenerateNewStudentId() {
+      const num = Math.floor(1000 + Math.random() * 9000);
+      document.getElementById('newStudentID').value = 'STU' + num;
+    }
+
     function registerStudent() {
       const studentData = {
         studentId: document.getElementById('newStudentID')?.value?.trim() || '',
@@ -1788,6 +1794,11 @@
             document.getElementById('generatedName').textContent = studentData.studentName;
             document.getElementById('generatedPhone').textContent = studentData.phoneNo;
             document.getElementById('generatedDress').textContent = studentData.dressCode;
+
+            const titleEl = document.querySelector('#qrCodeDisplay h5');
+            if (titleEl) {
+              titleEl.textContent = res.isUpdate ? 'Student Record Updated Successfully!' : 'Student Registered Successfully!';
+            }
 
             const qrContainer = document.getElementById('qrCodeContainer');
             if (qrContainer) {
