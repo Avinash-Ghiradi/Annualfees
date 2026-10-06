@@ -1495,11 +1495,35 @@
       initializePrintLayout();
       initializeMobileTabSystem();
 
+      // Bootstrap tab change listeners for desktop tabs
+      const tabElements = document.querySelectorAll('button[data-bs-toggle="tab"]');
+      tabElements.forEach(function(tabBtn) {
+        tabBtn.addEventListener('shown.bs.tab', function(e) {
+          const targetId = e.target.getAttribute('id');
+          if (targetId === 'manage-tab') loadStudents();
+          else if (targetId === 'scan-tab') initializeQRScanner();
+          else if (targetId === 'print-tab') loadPrintTab();
+          else if (targetId === 'studentlist-tab') loadStudentList();
+          else if (targetId === 'qrcode-tab') checkQRCodeStatus();
+          else if (targetId === 'dashboard-tab') loadDashboard();
+        });
+      });
+
+      // jQuery fallback click listeners
       $('#manage-tab').on('click', function() { setTimeout(loadStudents, 300); });
       $('#scan-tab').on('click', function() { setTimeout(initializeQRScanner, 300); });
       $('#print-tab').on('click', function() { setTimeout(loadPrintTab, 300); });
       $('#studentlist-tab').on('click', function() { setTimeout(loadStudentList, 300); });
-      
+      $('#qrcode-tab').on('click', function() { setTimeout(checkQRCodeStatus, 300); });
+      $('#dashboard-tab').on('click', function() { setTimeout(loadDashboard, 300); });
+
+      // Initial preload of data for all tabs so data renders immediately
+      setTimeout(function() {
+        loadStudents();
+        loadStudentList();
+        loadPrintTab();
+      }, 500);
+
       initializeFees();
     });
 
@@ -1549,6 +1573,8 @@
         if (tabName === 'manage') loadStudents();
         if (tabName === 'studentlist') loadStudentList();
         if (tabName === 'print') loadPrintTab();
+        if (tabName === 'qrcode') checkQRCodeStatus();
+        if (tabName === 'dashboard') loadDashboard();
       }, 300);
     }
 
@@ -1557,6 +1583,7 @@
       checkQRCodeStatus();
       if (typeof loadStudents === 'function') loadStudents();
       if (typeof loadStudentList === 'function') loadStudentList();
+      if (typeof loadPrintTab === 'function') loadPrintTab();
       Swal.fire({ icon: 'success', title: 'Refreshed!', timer: 1200, showConfirmButton: false });
     }
 
