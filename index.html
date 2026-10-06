@@ -564,6 +564,9 @@
       </div>
       
       <div class="user-controls">
+        <button id="sync-btn" class="btn btn-outline" title="Sync with Google Sheet" onclick="testSheetSync()">
+          <i class="fas fa-database"></i> Sync Sheet
+        </button>
         <button id="refresh-btn" class="btn btn-outline" title="Refresh Data" onclick="refreshAll()">
           <i class="fas fa-sync-alt"></i>
         </button>
@@ -2625,6 +2628,58 @@
 
     function initializeFees() {
       google.script.run.initializeFeesInDropdown();
+    }
+
+    function testSheetSync() {
+      Swal.fire({
+        title: 'Checking Google Sheet Connection...',
+        html: 'Target Sheet ID: <code>1uhK7jOTvlKGTC-7FVQxJa3g10I9nnNce2icXcE4ccVQ</code>',
+        didOpen: () => Swal.showLoading(),
+        allowOutsideClick: false
+      });
+
+      google.script.run.withSuccessHandler(res => {
+        if (res.hasStudentSheet || res.hasDataSheet) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Google Sheet Connected!',
+            html: `
+              <p>Connected to Spreadsheet: <code>${res.spreadsheetId}</code></p>
+              <p>Found tabs: <strong>${res.sheets.join(', ')}</strong></p>
+            `
+          });
+          refreshAll();
+        } else {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sheet Tabs Missing',
+            html: `
+              <p>Connected to Spreadsheet <code>${res.spreadsheetId}</code>, but default sheets (Data, Students, DROPDOWN) were not found.</p>
+              <p>Click below to initialize required sheets automatically.</p>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Initialize Required Sheets',
+            cancelButtonText: 'Cancel'
+          }).then(choice => {
+            if (choice.isConfirmed) {
+              google.script.run.withSuccessHandler(initRes => {
+                Swal.fire({ icon: 'success', title: 'Sheets Initialized!', text: initRes.message });
+                refreshAll();
+              }).initializeSheets();
+            }
+          });
+        }
+      }).withFailureHandler(err => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Connection Error',
+          html: `
+            <p>Could not access Google Sheet ID <code>1uhK7jOTvlKGTC-7FVQxJa3g10I9nnNce2icXcE4ccVQ</code>.</p>
+            <p><strong>Error details:</strong> ${err.message}</p>
+            <p><small>Ensure your Web App deployment script has access permissions to open this spreadsheet.</small></p>
+          `
+        });
+      }).testSheets();
     }
   </script>
 </body>
